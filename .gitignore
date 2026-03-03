@@ -3,8 +3,13 @@ Settings.inc
 
 # Auto-generated files
 GrassView.ini
+CommitView/CommitView.ini
 debug.log
+debug_commits.log
 
 # Dev history & local config
 HISTORY.md
 .claude
+
+# Temporary utility scripts
+create_issues.ps1

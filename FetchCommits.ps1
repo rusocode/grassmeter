@@ -1,0 +1,243 @@
+# =============================================================
+#  GitHub CommitView for Rainmeter
+#  FetchCommits.ps1
+#  Fetches latest commits per repo and generates CommitView\CommitView.ini
+# =============================================================
+param([string]$SkinPath = '')
+
+if (-not $SkinPath) { $SkinPath = Split-Path -Parent $MyInvocation.MyCommand.Path }
+$Log = Join-Path $SkinPath 'debug_commits.log'
+
+[System.IO.File]::WriteAllText($Log, '', [System.Text.UTF8Encoding]::new($false))
+function L($m) {
+    [System.IO.File]::AppendAllText($Log, "[$(Get-Date -f HH:mm:ss)] $m`r`n", [System.Text.UTF8Encoding]::new($false))
+}
+L '=== CommitView v1.1 ==='
+
+# Output goes into CommitView\ subfolder (separate Rainmeter config)
+$CommitViewDir = Join-Path $SkinPath 'CommitView'
+if (-not (Test-Path $CommitViewDir)) {
+    New-Item -ItemType Directory -Path $CommitViewDir | Out-Null
+    L 'Created CommitView subfolder'
+}
+$OutputIni = Join-Path $CommitViewDir 'CommitView.ini'
+
+# ------------------------------------------------------------------
+# Parse Settings.inc
+# ------------------------------------------------------------------
+$Token = ''; $Repo1 = ''; $Repo2 = ''; $Repo3 = ''; $AutoRefreshMin = 0
+
+$sf = Join-Path $SkinPath 'Settings.inc'
+if (Test-Path $sf) {
+    foreach ($line in [System.IO.File]::ReadAllLines($sf, [System.Text.UTF8Encoding]::new($true))) {
+        if ($line -match '^GitHubToken\s*=\s*(.+)$')      { $Token          = $Matches[1].Trim() }
+        if ($line -match '^Repo1\s*=\s*(.+)$')            { $Repo1           = $Matches[1].Trim() }
+        if ($line -match '^Repo2\s*=\s*(.+)$')            { $Repo2           = $Matches[1].Trim() }
+        if ($line -match '^Repo3\s*=\s*(.+)$')            { $Repo3           = $Matches[1].Trim() }
+        if ($line -match '^AutoRefreshMin\s*=\s*(\d+)$')  { $AutoRefreshMin  = [int]$Matches[1] }
+    }
+    L 'Settings.inc loaded'
+} else {
+    L 'WARNING: Settings.inc not found'
+}
+if ($AutoRefreshMin -gt 0 -and $AutoRefreshMin -lt 1) { $AutoRefreshMin = 1 }
+L "Token=$(if($Token){'set'}else{'NOT SET'})  Repo1=$Repo1  Repo2=$Repo2  Repo3=$Repo3  AutoRefreshMin=$AutoRefreshMin"
+
+if ($Token -eq '' -or $Token -eq 'ghp_your_token_here') { L 'ERROR: GitHubToken not set'; exit 1 }
+
+# ------------------------------------------------------------------
+# Helpers
+# ------------------------------------------------------------------
+$Headers = @{
+    Authorization = "Bearer $Token"
+    'User-Agent'  = 'Rainmeter-GitHubGrass/1.0'
+}
+
+function Get-RelativeTime($dateStr) {
+    $diff = (Get-Date).ToUniversalTime() - [datetime]::Parse($dateStr).ToUniversalTime()
+    if    ($diff.TotalMinutes -lt 60) { return "$([int]$diff.TotalMinutes)m ago" }
+    elseif($diff.TotalHours   -lt 24) { return "$([int]$diff.TotalHours)h ago"   }
+    elseif($diff.TotalDays    -lt 7)  { return "$([int]$diff.TotalDays)d ago"    }
+    else                               { return "$([int]($diff.TotalDays/7))w ago" }
+}
+
+# ------------------------------------------------------------------
+# Fetch up to 10 commits per repo
+# ------------------------------------------------------------------
+$Rows = [System.Collections.Generic.List[hashtable]]::new()
+
+foreach ($repo in @($Repo1, $Repo2, $Repo3)) {
+    if ($repo -eq '') { continue }
+    L "Fetching: $repo"
+    try {
+        $url     = 'https://api.github.com/repos/' + $repo + '/commits?per_page=10'
+        $commits = Invoke-RestMethod -Uri $url -Headers $Headers -ErrorAction Stop
+        $name    = ($repo -split '/')[1]
+        $ghUrl   = 'https://github.com/' + $repo
+        foreach ($c in $commits) {
+            $msg = ($c.commit.message -split "`n")[0].Trim()
+            $rel = Get-RelativeTime $c.commit.author.date
+            $Rows.Add(@{ name=$name; msg=$msg; time=$rel; url=$ghUrl })
+        }
+        L "  OK  $($commits.Count) commits"
+    } catch {
+        L ('  FAIL: ' + $_.Exception.Message)
+    }
+}
+
+L ("Total rows: " + $Rows.Count)
+
+# ------------------------------------------------------------------
+# Layout constants
+# ------------------------------------------------------------------
+$WW        = 500
+$Padding   = 14
+$RowH      = 24
+$RepoColW  = 110
+$MsgColX   = 132   # Padding + RepoColW + 8
+$TimeColW  = 68
+$TimeColX  = $WW - $Padding - $TimeColW   # = 418 (우측 고정)
+$MsgColW   = $TimeColX - $MsgColX - 24   # gap 24px → = 262
+$BtnAreaH  = 28
+
+$activeRows = $Rows.Count
+$WH = $Padding * 2 + $activeRows * $RowH + $BtnAreaH
+
+$cBG     = '13,17,23,240'
+$cStroke = '48,54,61,255'
+
+# ------------------------------------------------------------------
+# Generate CommitView.ini
+# ------------------------------------------------------------------
+$lines = [System.Collections.Generic.List[string]]::new()
+function W($s) { $lines.Add($s) }
+
+W ('; CommitView - Generated ' + (Get-Date -f 'yyyy-MM-dd HH:mm'))
+W '; DO NOT EDIT - regenerated by run_commits.bat'
+W ''
+W '[Rainmeter]'
+W 'Update=60000'
+W 'AccurateText=1'
+W ''
+W '[Variables]'
+W ('SkinFolder=' + $SkinPath)
+W ''
+
+# Background
+W '[MeterBG]'
+W 'Meter=Shape'
+W 'X=0'
+W 'Y=0'
+W ('Shape=Rectangle 0,0,' + $WW + ',' + $WH + ',8 | Fill Color ' + $cBG + ' | StrokeWidth 1 | Stroke Color ' + $cStroke)
+W ''
+
+# Commit rows
+$prevName = ''
+for ($i = 0; $i -lt $Rows.Count; $i++) {
+    $row    = $Rows[$i]
+    $name   = $row.name
+    $msg    = $row.msg
+    $time   = $row.time
+    $y      = $Padding + $i * $RowH
+    $action = '["' + $row.url + '"]'
+
+    # Dim repeated repo names for visual grouping
+    $nameColor = if ($name -eq $prevName) { '100,100,100,180' } else { '200,200,200,255' }
+    $prevName  = $name
+
+    W "[MRow${i}Name]"
+    W 'Meter=String'
+    W "X=$Padding"
+    W "Y=$y"
+    W "W=$RepoColW"
+    W "H=$RowH"
+    W "Text=$name"
+    W "FontColor=$nameColor"
+    W 'FontSize=9'
+    W 'FontFace=Segoe UI'
+    W 'AntiAlias=1'
+    W 'ClipString=2'
+    W "LeftMouseUpAction=$action"
+    W ''
+
+    W "[MRow${i}Msg]"
+    W 'Meter=String'
+    W "X=$MsgColX"
+    W "Y=$y"
+    W "W=$MsgColW"
+    W "H=$RowH"
+    W "Text=$msg"
+    W 'FontColor=139,148,158,255'
+    W 'FontSize=9'
+    W 'FontFace=Segoe UI'
+    W 'AntiAlias=1'
+    W 'ClipString=2'
+    W "LeftMouseUpAction=$action"
+    W ''
+
+    W "[MRow${i}Time]"
+    W 'Meter=String'
+    W "X=$TimeColX"
+    W "Y=$y"
+    W "W=$TimeColW"
+    W "H=$RowH"
+    W "Text=$time"
+    W 'FontColor=88,96,105,200'
+    W 'FontSize=8'
+    W 'FontFace=Segoe UI'
+    W 'AntiAlias=1'
+    W 'StringAlign=Right'
+    W "LeftMouseUpAction=$action"
+    W ''
+}
+
+# Auto-refresh measure (hidden, fires every AutoRefreshMin minutes)
+if ($AutoRefreshMin -ge 1) {
+    W '[MAutoRefresh]'
+    W 'Measure=Calc'
+    W 'Formula=0'
+    W "UpdateDivider=$AutoRefreshMin"
+    W ('OnUpdateAction=["wscript.exe" "#CURRENTPATH#launcher_commits.vbs"]')
+    W ''
+}
+
+# Refresh button (bottom right)
+$ry = $Padding + $activeRows * $RowH + [int](($BtnAreaH - 18) / 2)
+W '[MRefresh]'
+W 'Meter=String'
+W 'X=472'
+W "Y=$ry"
+W 'W=14'
+W 'H=18'
+W 'Text=R'
+W 'FontColor=88,96,105,200'
+W 'FontSize=9'
+W 'FontFace=Segoe UI'
+W 'AntiAlias=1'
+W ('LeftMouseUpAction=["wscript.exe" "#CURRENTPATH#launcher_commits.vbs"]')
+W 'ToolTipText=Click to reload commits'
+W ''
+
+# ------------------------------------------------------------------
+# Save with UTF-8 BOM
+# ------------------------------------------------------------------
+$content = [string]::Join("`r`n", $lines)
+[System.IO.File]::WriteAllText($OutputIni, $content, [System.Text.UTF8Encoding]::new($true))
+L ('Saved: ' + $OutputIni + '  rows=' + $activeRows + '  WH=' + $WH)
+
+# ------------------------------------------------------------------
+# Trigger Rainmeter skin refresh
+# config = "rainmeter_plugin\CommitView" (separate from GrassView config)
+# ------------------------------------------------------------------
+$config  = (Split-Path $SkinPath -Leaf) + '\CommitView'
+$iniFile = 'CommitView.ini'
+$rmExe   = "$env:ProgramFiles\Rainmeter\Rainmeter.exe"
+if (-not (Test-Path $rmExe)) { $rmExe = "${env:ProgramFiles(x86)}\Rainmeter\Rainmeter.exe" }
+if (Test-Path $rmExe) {
+    Start-Process $rmExe -ArgumentList "!Refresh `"$config`" `"$iniFile`""
+    L "Rainmeter refresh triggered: $config\$iniFile"
+} else {
+    L 'WARNING: Rainmeter.exe not found'
+}
+
+L '=== DONE ==='

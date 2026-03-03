@@ -48,6 +48,8 @@ Right-click tray icon → Manage → Load `GrassView.ini`
 
 Open `Settings.inc` to customize. After editing, click the **R** button on the widget to apply.
 
+### GrassView
+
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `GitHubUsername` | — | Your GitHub username |
@@ -57,6 +59,15 @@ Open `Settings.inc` to customize. After editing, click the **R** button on the w
 | `CellGap` | `2` | Gap between cells |
 | `Padding` | `14` | Widget outer padding |
 | `WeeksToShow` | `52` | Weeks to display (52 = 1 year) |
+
+### CommitView
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `Repo1` | — | Repository to track (`owner/repo`) |
+| `Repo2` | — | Repository to track (optional) |
+| `Repo3` | — | Repository to track (optional) |
+| `AutoRefreshMin` | `5` | Auto-refresh interval in minutes (`0` = disabled) |
 
 ### Color Themes
 
@@ -116,12 +127,19 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 
 ```
 rainmeter_plugin\
-├── Settings.inc         ← Your configuration
-├── FetchAndBuild.ps1    ← Data fetcher + INI generator
-├── run.bat              ← Run this to generate the widget
-├── launcher.vbs         ← Silent background script launcher
-├── GrassView.ini        ← Auto-generated (do not edit)
-└── debug.log            ← Auto-generated (check on errors)
+├── Settings.inc              ← All configuration (GrassView + CommitView)
+├── FetchAndBuild.ps1         ← GrassView: fetcher + INI generator
+├── FetchCommits.ps1          ← CommitView: fetcher + INI generator
+├── run.bat                   ← GrassView: run to generate widget
+├── run_commits.bat           ← CommitView: run to generate widget
+├── launcher.vbs              ← GrassView: silent background launcher
+├── launcher_commits.vbs      ← CommitView: silent background launcher
+├── GrassView.ini             ← Auto-generated (do not edit)
+├── debug.log                 ← Auto-generated (GrassView errors)
+├── debug_commits.log         ← Auto-generated (CommitView errors)
+└── CommitView\
+    ├── CommitView.ini        ← Auto-generated (do not edit)
+    └── launcher_commits.vbs  ← R button launcher (separate config)
 ```
 
 ---
@@ -145,6 +163,9 @@ rainmeter_plugin\
 - [x] Silent background execution via `wscript.exe` + `launcher.vbs` (no console window flash)
 - [x] Auto-refresh after script completes (`Rainmeter.exe !Refresh`)
 - [x] L0 cell contrast improvement (empty cells more visible against background)
+- [x] **CommitView widget** — show latest commits (up to 10) from up to 3 repositories
+- [x] **CommitView auto-refresh** — configurable interval via `AutoRefreshMin` in `Settings.inc`
+- [x] **Dual widget support** — GrassView and CommitView load as separate Rainmeter configs simultaneously
 
 ### Planned / TODO
 
@@ -152,6 +173,9 @@ rainmeter_plugin\
 - [ ] GitHub OAuth Device Flow (no manual token setup)
 - [ ] Auto-refresh on system startup
 - [ ] `.rmskin` package for one-click install
+- [ ] Light background color theme
+- [ ] API error display directly on widget
+- [ ] Private repo contribution toggle
 
 ---
 
@@ -160,6 +184,15 @@ rainmeter_plugin\
 Buttons in the widget call `wscript.exe launcher.vbs [weeks]` directly from `LeftMouseUpAction`.
 This avoids the Rainmeter RunCommand plugin (which has issues with space-containing paths and arguments).
 `FetchAndBuild.ps1` triggers `Rainmeter.exe !Refresh` at the end so the widget reloads automatically.
+
+---
+
+## Contributing
+
+Contributions are welcome!
+Check open issues labeled [`good first issue`](https://github.com/ssassu/grassmeter/issues?q=label%3A%22good+first+issue%22) to get started.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ---
 
