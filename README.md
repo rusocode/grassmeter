@@ -18,7 +18,7 @@ Display your GitHub contribution graph on your Windows desktop using Rainmeter.
 
 **1. Copy the skin folder**
 ```
-Documents\Rainmeter\Skins\rainmeter_plugin\
+Documents\Rainmeter\Skins\grassmeter\
 ```
 
 **2. Edit `Settings.inc`**
@@ -126,20 +126,18 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 ## File Structure
 
 ```
-rainmeter_plugin\
-├── Settings.inc              ← All configuration (GrassView + CommitView)
-├── FetchAndBuild.ps1         ← GrassView: fetcher + INI generator
-├── FetchCommits.ps1          ← CommitView: fetcher + INI generator
-├── run.bat                   ← GrassView: run to generate widget
-├── run_commits.bat           ← CommitView: run to generate widget
-├── launcher.vbs              ← GrassView: silent background launcher
-├── launcher_commits.vbs      ← CommitView: silent background launcher
-├── GrassView.ini             ← Auto-generated (do not edit)
-├── debug.log                 ← Auto-generated (GrassView errors)
-├── debug_commits.log         ← Auto-generated (CommitView errors)
-└── CommitView\
-    ├── CommitView.ini        ← Auto-generated (do not edit)
-    └── launcher_commits.vbs  ← R button launcher (separate config)
+grassmeter\
+├── Settings.inc          ← All configuration (GrassView + CommitView)
+├── FetchAndBuild.ps1     ← GrassView: fetcher + INI generator
+├── FetchCommits.ps1      ← CommitView: fetcher + INI generator
+├── run.bat               ← GrassView: run to generate widget
+├── run_commits.bat       ← CommitView: run to generate widget
+├── launcher.vbs          ← GrassView: silent background launcher
+├── launcher_commits.vbs  ← CommitView: silent background launcher
+├── GrassView.ini         ← Auto-generated (do not edit)
+├── CommitView.ini        ← Auto-generated (do not edit)
+├── debug.log             ← Auto-generated (GrassView errors)
+└── debug_commits.log     ← Auto-generated (CommitView errors)
 ```
 
 ---

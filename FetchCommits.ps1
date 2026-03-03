@@ -1,7 +1,7 @@
 # =============================================================
 #  GitHub CommitView for Rainmeter
 #  FetchCommits.ps1
-#  Fetches latest commits per repo and generates CommitView\CommitView.ini
+#  Fetches latest commits per repo and generates CommitView.ini
 # =============================================================
 param([string]$SkinPath = '')
 
@@ -12,15 +12,9 @@ $Log = Join-Path $SkinPath 'debug_commits.log'
 function L($m) {
     [System.IO.File]::AppendAllText($Log, "[$(Get-Date -f HH:mm:ss)] $m`r`n", [System.Text.UTF8Encoding]::new($false))
 }
-L '=== CommitView v1.1 ==='
+L '=== CommitView v1.2 ==='
 
-# Output goes into CommitView\ subfolder (separate Rainmeter config)
-$CommitViewDir = Join-Path $SkinPath 'CommitView'
-if (-not (Test-Path $CommitViewDir)) {
-    New-Item -ItemType Directory -Path $CommitViewDir | Out-Null
-    L 'Created CommitView subfolder'
-}
-$OutputIni = Join-Path $CommitViewDir 'CommitView.ini'
+$OutputIni = Join-Path $SkinPath 'CommitView.ini'
 
 # ------------------------------------------------------------------
 # Parse Settings.inc
@@ -186,7 +180,6 @@ for ($i = 0; $i -lt $Rows.Count; $i++) {
     W 'FontSize=8'
     W 'FontFace=Segoe UI'
     W 'AntiAlias=1'
-    W 'StringAlign=Right'
     W "LeftMouseUpAction=$action"
     W ''
 }
@@ -227,9 +220,8 @@ L ('Saved: ' + $OutputIni + '  rows=' + $activeRows + '  WH=' + $WH)
 
 # ------------------------------------------------------------------
 # Trigger Rainmeter skin refresh
-# config = "rainmeter_plugin\CommitView" (separate from GrassView config)
 # ------------------------------------------------------------------
-$config  = (Split-Path $SkinPath -Leaf) + '\CommitView'
+$config  = Split-Path $SkinPath -Leaf
 $iniFile = 'CommitView.ini'
 $rmExe   = "$env:ProgramFiles\Rainmeter\Rainmeter.exe"
 if (-not (Test-Path $rmExe)) { $rmExe = "${env:ProgramFiles(x86)}\Rainmeter\Rainmeter.exe" }
