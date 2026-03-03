@@ -1,4 +1,4 @@
-﻿# 🌿 GitHub Grass for Rainmeter
+# 🌿 GitHub Grass for Rainmeter
 
 Display your GitHub contribution graph on your Windows desktop using Rainmeter.
 
@@ -18,7 +18,7 @@ Display your GitHub contribution graph on your Windows desktop using Rainmeter.
 
 **1. Copy the skin folder**
 ```
-Documents\Rainmeter\Skins\GitHubGrass\
+Documents\Rainmeter\Skins\rainmeter_plugin\
 ```
 
 **2. Edit `Settings.inc`**
@@ -28,7 +28,7 @@ GitHubToken=ghp_xxxxxxxxxxxxxxxxxxxx
 ```
 
 **3. Run `run.bat`** (double-click)
-Wait ~10 seconds for data to load.
+Wait ~10 seconds for data to load. The widget will appear automatically.
 
 **4. Load `GrassView.ini` in Rainmeter Manager**
 Right-click tray icon → Manage → Load `GrassView.ini`
@@ -72,9 +72,25 @@ Open `Settings.inc` to customize. After editing, click the **R** button on the w
 
 ---
 
-## Updating Data
+## Usage
 
-Click the **R** button on the widget to fetch fresh data and apply any `Settings.inc` changes.
+### Period Selector Buttons
+
+Click the period buttons on the widget to change the displayed time range:
+
+| Button | Period |
+|--------|--------|
+| `1W` | Last 1 week |
+| `1M` | Last 4 weeks |
+| `3M` | Last 13 weeks |
+| `6M` | Last 26 weeks |
+| `1Y` | Last 52 weeks (default) |
+
+The widget updates automatically — no manual refresh needed.
+
+### R Button
+
+Click **R** (top-right of widget) to fetch fresh data and apply any `Settings.inc` changes.
 
 ---
 
@@ -99,10 +115,11 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 ## File Structure
 
 ```
-GitHubGrass\
+rainmeter_plugin\
 ├── Settings.inc         ← Your configuration
 ├── FetchAndBuild.ps1    ← Data fetcher + INI generator
 ├── run.bat              ← Run this to generate the widget
+├── launcher.vbs         ← Silent background script launcher
 ├── GrassView.ini        ← Auto-generated (do not edit)
 └── debug.log            ← Auto-generated (check on errors)
 ```
@@ -120,19 +137,29 @@ GitHubGrass\
 - [x] 52-week (1 year) contribution graph display
 - [x] Weekday labels (Sun ~ Sat)
 - [x] Month labels (Jan ~ Dec)
-- [x] **R** refresh button on widget
-- [x] Auto-reload via `OnRefreshAction` on Rainmeter refresh
 - [x] 7 color themes (Green / Purple / Blue / Red / Orange / Pink / Mono)
 - [x] Opacity setting (background transparency)
 - [x] Configurable cell size, gap, padding, weeks
+- [x] **R** refresh button on widget
+- [x] **Period selector buttons (1W / 1M / 3M / 6M / 1Y)** — click to switch time range instantly
+- [x] Silent background execution via `wscript.exe` + `launcher.vbs` (no console window flash)
+- [x] Auto-refresh after script completes (`Rainmeter.exe !Refresh`)
+- [x] L0 cell contrast improvement (empty cells more visible against background)
 
 ### Planned / TODO
 
-- [ ] Period selector buttons on widget (1W / 1M / 3M / 6M / 1Y)
 - [ ] Opacity slider UI on widget
 - [ ] GitHub OAuth Device Flow (no manual token setup)
 - [ ] Auto-refresh on system startup
 - [ ] `.rmskin` package for one-click install
+
+---
+
+## Architecture Notes
+
+Buttons in the widget call `wscript.exe launcher.vbs [weeks]` directly from `LeftMouseUpAction`.
+This avoids the Rainmeter RunCommand plugin (which has issues with space-containing paths and arguments).
+`FetchAndBuild.ps1` triggers `Rainmeter.exe !Refresh` at the end so the widget reloads automatically.
 
 ---
 

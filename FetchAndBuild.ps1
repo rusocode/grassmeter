@@ -59,13 +59,13 @@ if ($Token    -eq '' -or $Token    -eq 'ghp_your_token_here') { L 'ERROR: GitHub
 # ------------------------------------------------------------------
 # Color themes
 # ------------------------------------------------------------------
-$cBG='13,17,23,240'; $cL0='22,27,34,255'; $cL1='14,68,41,255'; $cL2='0,109,50,255'; $cL3='38,166,65,255'; $cL4='57,211,83,255'
-if     ($Theme -eq 'Purple') { $cBG='13,17,23,240'; $cL0='22,27,34,255'; $cL1='45,17,96,255';  $cL2='90,30,153,255';  $cL3='137,87,229,255'; $cL4='196,155,255,255' }
-elseif ($Theme -eq 'Blue')   { $cBG='13,17,23,240'; $cL0='22,27,34,255'; $cL1='12,37,67,255';  $cL2='13,65,157,255';  $cL3='31,111,235,255'; $cL4='88,166,255,255'  }
-elseif ($Theme -eq 'Red')    { $cBG='13,17,23,240'; $cL0='22,27,34,255'; $cL1='75,28,28,255';  $cL2='139,26,26,255';  $cL3='207,46,46,255';  $cL4='255,107,107,255' }
-elseif ($Theme -eq 'Orange') { $cBG='13,17,23,240'; $cL0='22,27,34,255'; $cL1='77,38,0,255';   $cL2='153,77,0,255';   $cL3='224,108,0,255';  $cL4='255,165,0,255'   }
-elseif ($Theme -eq 'Pink')   { $cBG='13,17,23,240'; $cL0='22,27,34,255'; $cL1='77,0,38,255';   $cL2='153,0,82,255';   $cL3='224,0,122,255';  $cL4='255,105,180,255' }
-elseif ($Theme -eq 'Mono')   { $cBG='13,17,23,240'; $cL0='22,27,34,255'; $cL1='42,42,42,255';  $cL2='85,85,85,255';   $cL3='136,136,136,255';$cL4='204,204,204,255' }
+$cBG='13,17,23,240'; $cL0='33,38,46,255'; $cL1='14,68,41,255'; $cL2='0,109,50,255'; $cL3='38,166,65,255'; $cL4='57,211,83,255'
+if     ($Theme -eq 'Purple') { $cBG='13,17,23,240'; $cL0='33,38,46,255'; $cL1='45,17,96,255';  $cL2='90,30,153,255';  $cL3='137,87,229,255'; $cL4='196,155,255,255' }
+elseif ($Theme -eq 'Blue')   { $cBG='13,17,23,240'; $cL0='33,38,46,255'; $cL1='12,37,67,255';  $cL2='13,65,157,255';  $cL3='31,111,235,255'; $cL4='88,166,255,255'  }
+elseif ($Theme -eq 'Red')    { $cBG='13,17,23,240'; $cL0='33,38,46,255'; $cL1='75,28,28,255';  $cL2='139,26,26,255';  $cL3='207,46,46,255';  $cL4='255,107,107,255' }
+elseif ($Theme -eq 'Orange') { $cBG='13,17,23,240'; $cL0='33,38,46,255'; $cL1='77,38,0,255';   $cL2='153,77,0,255';   $cL3='224,108,0,255';  $cL4='255,165,0,255'   }
+elseif ($Theme -eq 'Pink')   { $cBG='13,17,23,240'; $cL0='33,38,46,255'; $cL1='77,0,38,255';   $cL2='153,0,82,255';   $cL3='224,0,122,255';  $cL4='255,105,180,255' }
+elseif ($Theme -eq 'Mono')   { $cBG='13,17,23,240'; $cL0='33,38,46,255'; $cL1='42,42,42,255';  $cL2='85,85,85,255';   $cL3='136,136,136,255';$cL4='204,204,204,255' }
 L "Theme=$Theme  L0=[$cL0]  L4=[$cL4]"
 
 # ------------------------------------------------------------------
@@ -179,26 +179,7 @@ W "[Variables]"
 W ("SkinFolder=" + $SkinPath)
 W ""
 
-# Reload measure (R button triggers this)
-W "[MeasureReload]"
-W "Measure=Plugin"
-W "Plugin=RunCommand"
-W ("Program=" + $SkinPath + "\run.bat")
-W "State=0"
-W "FinishAction=[!Refresh]"
-W ""
-
-# Period selector measures
-foreach ($p in $Periods) {
-    $pl = $p.label; $pw = $p.weeks
-    W ("[MeasurePeriod" + $pl + "]")
-    W "Measure=Plugin"
-    W "Plugin=RunCommand"
-    W ("Program=" + $SkinPath + "\SetPeriod.bat " + $pw)
-    W "State=0"
-    W "FinishAction=[!Refresh]"
-    W ""
-}
+# (RunCommand measures removed - buttons call powershell directly)
 
 # Background
 W "[MeterBG]"
@@ -318,7 +299,7 @@ foreach ($p in $Periods) {
     W "AntiAlias=1"
     W "StringAlign=Center"
     W "StringStyle=$bstyle"
-    W ("LeftMouseUpAction=[!CommandMeasure MeasurePeriod" + $pl + " 'Run']")
+    W ("LeftMouseUpAction=[`"wscript.exe`" `"#CURRENTPATH#launcher.vbs`" " + $pw + "]")
     W ("ToolTipText=Show contributions for last " + $pl)
     W ""
     $pi++
@@ -337,7 +318,7 @@ W "FontColor=88,96,105,200"
 W "FontSize=9"
 W "FontFace=Segoe UI"
 W "AntiAlias=1"
-W "LeftMouseUpAction=[!CommandMeasure MeasureReload 'Run']"
+W "LeftMouseUpAction=[`"wscript.exe`" `"#CURRENTPATH#launcher.vbs`"]"
 W "ToolTipText=Click to reload (applies Settings.inc changes)"
 W ""
 
@@ -345,5 +326,18 @@ W ""
 $content = [string]::Join("`r`n", $lines)
 [System.IO.File]::WriteAllText($OutputIni, $content, [System.Text.UTF8Encoding]::new($true))
 L ("Saved: " + $OutputIni + "  cells=" + $idx)
+
+# Trigger Rainmeter skin refresh automatically
+$config  = Split-Path $SkinPath -Leaf
+$iniFile = [System.IO.Path]::GetFileName($OutputIni)
+$rmExe   = "$env:ProgramFiles\Rainmeter\Rainmeter.exe"
+if (-not (Test-Path $rmExe)) { $rmExe = "${env:ProgramFiles(x86)}\Rainmeter\Rainmeter.exe" }
+if (Test-Path $rmExe) {
+    Start-Process $rmExe -ArgumentList "!Refresh `"$config`" `"$iniFile`""
+    L "Rainmeter refresh triggered: $config\$iniFile"
+} else {
+    L "WARNING: Rainmeter.exe not found - refresh manually"
+}
+
 L '=== DONE ==='
 Write-Output ("SUCCESS:" + $Total)
