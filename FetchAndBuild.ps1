@@ -194,7 +194,7 @@ foreach ($p in $Periods) {
     W ("[MeasurePeriod" + $pl + "]")
     W "Measure=Plugin"
     W "Plugin=RunCommand"
-    W ("Program=powershell.exe -ExecutionPolicy Bypass -NoProfile -WindowStyle Hidden -File `"" + $SkinPath + "\FetchAndBuild.ps1`" -SkinPath `"" + $SkinPath + "`" -WeeksOverride " + $pw)
+    W ("Program=" + $SkinPath + "\SetPeriod.bat " + $pw)
     W "State=0"
     W "FinishAction=[!Refresh]"
     W ""
