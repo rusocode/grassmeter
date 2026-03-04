@@ -194,19 +194,28 @@ if ($AutoRefreshMin -ge 1) {
     W ''
 }
 
-# Refresh button (bottom right)
-$ry = $Padding + $activeRows * $RowH + [int](($BtnAreaH - 18) / 2)
-W '[MRefresh]'
-W 'Meter=String'
-W 'X=472'
+# Icon buttons - bottom-left
+$ry  = $Padding + $activeRows * $RowH + [int](($BtnAreaH - 20) / 2)
+$rix = $Padding + 26
+
+W '[MSettings]'
+W 'Meter=Image'
+W 'ImageName=#ROOTCONFIGPATH#@Resources\Icons\settings.png'
+W "X=$Padding"
 W "Y=$ry"
-W 'W=14'
-W 'H=18'
-W 'Text=R'
-W 'FontColor=88,96,105,200'
-W 'FontSize=9'
-W 'FontFace=Segoe UI'
-W 'AntiAlias=1'
+W 'W=20'
+W 'H=20'
+W ('LeftMouseUpAction=["wscript.exe" "#ROOTCONFIGPATH#launch_settings.vbs"]')
+W 'ToolTipText=Open Settings'
+W ''
+
+W '[MRefresh]'
+W 'Meter=Image'
+W 'ImageName=#ROOTCONFIGPATH#@Resources\Icons\refresh.png'
+W "X=$rix"
+W "Y=$ry"
+W 'W=20'
+W 'H=20'
 W ('LeftMouseUpAction=["wscript.exe" "#CURRENTPATH#launcher_commits.vbs"]')
 W 'ToolTipText=Click to reload commits'
 W ''
