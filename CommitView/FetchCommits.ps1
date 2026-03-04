@@ -194,18 +194,37 @@ if ($AutoRefreshMin -ge 1) {
     W ''
 }
 
-# Refresh button (bottom right)
+$iconGear    = [char]0x2699   # ⚙
+$iconRefresh = [char]0x21BB   # ↻
 $ry = $Padding + $activeRows * $RowH + [int](($BtnAreaH - 18) / 2)
+
+# Settings button (left of Refresh)
+W '[MSettings]'
+W 'Meter=String'
+W 'X=446'
+W "Y=$ry"
+W 'W=20'
+W 'H=18'
+W "Text=$iconGear"
+W 'FontColor=88,96,105,200'
+W 'FontSize=12'
+W 'FontFace=Segoe UI Symbol'
+W 'AntiAlias=1'
+W ('LeftMouseUpAction=["wscript.exe" "#ROOTCONFIGPATH#launch_settings.vbs"]')
+W 'ToolTipText=Open Settings'
+W ''
+
+# Refresh button (bottom right)
 W '[MRefresh]'
 W 'Meter=String'
-W 'X=472'
+W 'X=468'
 W "Y=$ry"
-W 'W=14'
+W 'W=20'
 W 'H=18'
-W 'Text=R'
+W "Text=$iconRefresh"
 W 'FontColor=88,96,105,200'
-W 'FontSize=9'
-W 'FontFace=Segoe UI'
+W 'FontSize=12'
+W 'FontFace=Segoe UI Symbol'
 W 'AntiAlias=1'
 W ('LeftMouseUpAction=["wscript.exe" "#CURRENTPATH#launcher_commits.vbs"]')
 W 'ToolTipText=Click to reload commits'

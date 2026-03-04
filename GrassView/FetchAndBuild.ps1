@@ -305,18 +305,38 @@ foreach ($p in $Periods) {
     $pi++
 }
 
+$iconGear    = [char]0x2699   # ⚙
+$iconRefresh = [char]0x21BB   # ↻
+
+# Settings button
+$sx = $WW - $Padding - 20 - 26
+W "[MSettings]"
+W "Meter=String"
+W "X=$sx"
+W "Y=$Padding"
+W "W=20"
+W "H=$MonthH"
+W "Text=$iconGear"
+W "FontColor=88,96,105,200"
+W "FontSize=12"
+W "FontFace=Segoe UI Symbol"
+W "AntiAlias=1"
+W "LeftMouseUpAction=[`"wscript.exe`" `"#ROOTCONFIGPATH#launch_settings.vbs`"]"
+W "ToolTipText=Open Settings"
+W ""
+
 # Refresh button
-$rx = $WW - $Padding - 18
+$rx = $WW - $Padding - 20
 W "[MRefresh]"
 W "Meter=String"
 W "X=$rx"
 W "Y=$Padding"
-W "W=18"
+W "W=20"
 W "H=$MonthH"
-W "Text=R"
+W "Text=$iconRefresh"
 W "FontColor=88,96,105,200"
-W "FontSize=9"
-W "FontFace=Segoe UI"
+W "FontSize=12"
+W "FontFace=Segoe UI Symbol"
 W "AntiAlias=1"
 W "LeftMouseUpAction=[`"wscript.exe`" `"#CURRENTPATH#launcher.vbs`"]"
 W "ToolTipText=Click to reload (applies Settings.inc changes)"
