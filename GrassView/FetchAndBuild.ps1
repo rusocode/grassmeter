@@ -305,22 +305,15 @@ foreach ($p in $Periods) {
     $pi++
 }
 
-$iconGear    = [char]0xE8B8   # Material Icons: settings
-$iconRefresh = [char]0xE5D5   # Material Icons: refresh
-
 # Settings button
 $sx = $WW - $Padding - 20 - 26
 W "[MSettings]"
-W "Meter=String"
+W "Meter=Image"
+W "ImageName=#ROOTCONFIGPATH#@Resources\Icons\settings.png"
 W "X=$sx"
 W "Y=$Padding"
 W "W=20"
-W "H=$MonthH"
-W "Text=$iconGear"
-W "FontColor=88,96,105,200"
-W "FontSize=14"
-W "FontFace=Material Icons"
-W "AntiAlias=1"
+W "H=20"
 W "LeftMouseUpAction=[`"wscript.exe`" `"#ROOTCONFIGPATH#launch_settings.vbs`"]"
 W "ToolTipText=Open Settings"
 W ""
@@ -328,16 +321,12 @@ W ""
 # Refresh button
 $rx = $WW - $Padding - 20
 W "[MRefresh]"
-W "Meter=String"
+W "Meter=Image"
+W "ImageName=#ROOTCONFIGPATH#@Resources\Icons\refresh.png"
 W "X=$rx"
 W "Y=$Padding"
 W "W=20"
-W "H=$MonthH"
-W "Text=$iconRefresh"
-W "FontColor=88,96,105,200"
-W "FontSize=14"
-W "FontFace=Material Icons"
-W "AntiAlias=1"
+W "H=20"
 W "LeftMouseUpAction=[`"wscript.exe`" `"#CURRENTPATH#launcher.vbs`"]"
 W "ToolTipText=Click to reload (applies Settings.inc changes)"
 W ""

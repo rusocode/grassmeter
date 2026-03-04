@@ -194,38 +194,28 @@ if ($AutoRefreshMin -ge 1) {
     W ''
 }
 
-$iconGear    = [char]0xE8B8   # Material Icons: settings
-$iconRefresh = [char]0xE5D5   # Material Icons: refresh
 $ry = $Padding + $activeRows * $RowH + [int](($BtnAreaH - 18) / 2)
 
 # Settings button (left of Refresh)
 W '[MSettings]'
-W 'Meter=String'
+W 'Meter=Image'
+W 'ImageName=#ROOTCONFIGPATH#@Resources\Icons\settings.png'
 W 'X=446'
 W "Y=$ry"
 W 'W=20'
-W 'H=18'
-W "Text=$iconGear"
-W 'FontColor=88,96,105,200'
-W 'FontSize=14'
-W 'FontFace=Material Icons'
-W 'AntiAlias=1'
+W 'H=20'
 W ('LeftMouseUpAction=["wscript.exe" "#ROOTCONFIGPATH#launch_settings.vbs"]')
 W 'ToolTipText=Open Settings'
 W ''
 
 # Refresh button (bottom right)
 W '[MRefresh]'
-W 'Meter=String'
+W 'Meter=Image'
+W 'ImageName=#ROOTCONFIGPATH#@Resources\Icons\refresh.png'
 W 'X=468'
 W "Y=$ry"
 W 'W=20'
-W 'H=18'
-W "Text=$iconRefresh"
-W 'FontColor=88,96,105,200'
-W 'FontSize=14'
-W 'FontFace=Material Icons'
-W 'AntiAlias=1'
+W 'H=20'
 W ('LeftMouseUpAction=["wscript.exe" "#CURRENTPATH#launcher_commits.vbs"]')
 W 'ToolTipText=Click to reload commits'
 W ''
