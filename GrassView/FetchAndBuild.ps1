@@ -305,26 +305,26 @@ foreach ($p in $Periods) {
     $pi++
 }
 
-# Settings button
-$sx = $WW - $Padding - 20 - 26
+# Icon buttons - bottom-left, aligned with period selector row
+$iy = $bby + [int](($BtnRowH - 20) / 2)
+
 W "[MSettings]"
 W "Meter=Image"
 W "ImageName=#ROOTCONFIGPATH#@Resources\Icons\settings.png"
-W "X=$sx"
-W "Y=$Padding"
+W "X=$Padding"
+W "Y=$iy"
 W "W=20"
 W "H=20"
 W "LeftMouseUpAction=[`"wscript.exe`" `"#ROOTCONFIGPATH#launch_settings.vbs`"]"
 W "ToolTipText=Open Settings"
 W ""
 
-# Refresh button
-$rx = $WW - $Padding - 20
+$rix = $Padding + 26
 W "[MRefresh]"
 W "Meter=Image"
 W "ImageName=#ROOTCONFIGPATH#@Resources\Icons\refresh.png"
-W "X=$rx"
-W "Y=$Padding"
+W "X=$rix"
+W "Y=$iy"
 W "W=20"
 W "H=20"
 W "LeftMouseUpAction=[`"wscript.exe`" `"#CURRENTPATH#launcher.vbs`"]"

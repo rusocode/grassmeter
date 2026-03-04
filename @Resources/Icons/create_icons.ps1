@@ -62,13 +62,13 @@ $g.SmoothingMode   = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
 $g.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
 $g.Clear([System.Drawing.Color]::Transparent)
 
-$pen        = [System.Drawing.Pen]::new($clr, [float]2.2)
+$pen        = [System.Drawing.Pen]::new($clr, [float]2.0)
 $pen.LineJoin = [System.Drawing.Drawing2D.LineJoin]::Round
 $arrowBrush = [System.Drawing.SolidBrush]::new($clr)
 
 $cx = [double]($S / 2)
 $cy = [double]($S / 2)
-$r  = $S * 0.36
+$r  = $S * 0.31
 
 $startDeg = [float](-210.0)
 $sweepDeg = [float](300.0)
@@ -85,8 +85,8 @@ $ty =   [Math]::Cos($endRad)
 $nx =  -[Math]::Cos($endRad)   # normal (inward)
 $ny =  -[Math]::Sin($endRad)
 
-$al = $S * 0.26
-$aw = $S * 0.16
+$al = $S * 0.22
+$aw = $S * 0.14
 $arrowPts = @(
     [System.Drawing.PointF]::new($ex + $tx * $al,  $ey + $ty * $al),
     [System.Drawing.PointF]::new($ex + $nx * $aw,  $ey + $ny * $aw),

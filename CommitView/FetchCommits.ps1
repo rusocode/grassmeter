@@ -194,13 +194,14 @@ if ($AutoRefreshMin -ge 1) {
     W ''
 }
 
-$ry = $Padding + $activeRows * $RowH + [int](($BtnAreaH - 18) / 2)
+# Icon buttons - bottom-left
+$ry  = $Padding + $activeRows * $RowH + [int](($BtnAreaH - 20) / 2)
+$rix = $Padding + 26
 
-# Settings button (left of Refresh)
 W '[MSettings]'
 W 'Meter=Image'
 W 'ImageName=#ROOTCONFIGPATH#@Resources\Icons\settings.png'
-W 'X=446'
+W "X=$Padding"
 W "Y=$ry"
 W 'W=20'
 W 'H=20'
@@ -208,11 +209,10 @@ W ('LeftMouseUpAction=["wscript.exe" "#ROOTCONFIGPATH#launch_settings.vbs"]')
 W 'ToolTipText=Open Settings'
 W ''
 
-# Refresh button (bottom right)
 W '[MRefresh]'
 W 'Meter=Image'
 W 'ImageName=#ROOTCONFIGPATH#@Resources\Icons\refresh.png'
-W 'X=468'
+W "X=$rix"
 W "Y=$ry"
 W 'W=20'
 W 'H=20'
