@@ -60,12 +60,19 @@ function Get-RelativeTime($dateStr) {
 # ------------------------------------------------------------------
 $Rows = [System.Collections.Generic.List[hashtable]]::new()
 
+# Ensure TLS 1.2 for GitHub API
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+
 foreach ($repo in @($Repo1, $Repo2, $Repo3)) {
     if ($repo -eq '') { continue }
     L "Fetching: $repo"
     try {
-        $url     = 'https://api.github.com/repos/' + $repo + '/commits?per_page=10'
-        $commits = Invoke-RestMethod -Uri $url -Headers $Headers -ErrorAction Stop
+        $url  = 'https://api.github.com/repos/' + $repo + '/commits?per_page=10'
+        # Use WebClient with explicit UTF-8 to correctly decode Korean/CJK commit messages
+        $wc   = New-Object System.Net.WebClient
+        $wc.Encoding = [System.Text.Encoding]::UTF8
+        foreach ($key in $Headers.Keys) { $wc.Headers[$key] = $Headers[$key] }
+        $commits = ($wc.DownloadString($url)) | ConvertFrom-Json
         $name    = ($repo -split '/')[1]
         $ghUrl   = 'https://github.com/' + $repo
         foreach ($c in $commits) {
@@ -224,7 +231,7 @@ W ''
 # Save with UTF-8 BOM
 # ------------------------------------------------------------------
 $content = [string]::Join("`r`n", $lines)
-[System.IO.File]::WriteAllText($OutputIni, $content, [System.Text.UTF8Encoding]::new($true))
+[System.IO.File]::WriteAllText($OutputIni, $content, [System.Text.Encoding]::Unicode)
 L ('Saved: ' + $OutputIni + '  rows=' + $activeRows + '  WH=' + $WH)
 
 # ------------------------------------------------------------------

@@ -5,6 +5,8 @@
 # =============================================================
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
+[System.Windows.Forms.Application]::EnableVisualStyles()
+[System.Windows.Forms.Application]::SetCompatibleTextRenderingDefault($false)
 
 $root         = Split-Path -Parent $MyInvocation.MyCommand.Path
 $settingsFile = Join-Path $root 'Settings.inc'
@@ -70,6 +72,7 @@ function New-Panel($x, $y, $w, $h) {
     $p = New-Object System.Windows.Forms.Panel
     $p.Left = $x; $p.Top = $y; $p.Width = $w; $p.Height = $h
     $p.BackColor = $clrBg2
+    $p.BorderStyle = [System.Windows.Forms.BorderStyle]::None
     return $p
 }
 
@@ -87,7 +90,7 @@ function New-SectionLabel($text, $x, $y) {
 # ------------------------------------------------------------------
 $form = New-Object System.Windows.Forms.Form
 $form.Text            = 'grassmeter Settings'
-$form.ClientSize      = New-Object System.Drawing.Size(400, 560)
+$form.ClientSize      = New-Object System.Drawing.Size(400, 620)
 $form.StartPosition   = 'CenterScreen'
 $form.FormBorderStyle = 'FixedDialog'
 $form.MaximizeBox     = $false
@@ -154,16 +157,25 @@ $txtWeeks = New-TextBox $cfg['WeeksToShow'] 120 7 55; $pPeriod.Controls.Add($txt
 # ------------------------------------------------------------------
 $form.Controls.Add((New-SectionLabel 'Repositories' 14 $py)); $py += 24
 
-$pRepo = New-Panel 10 $py 380 92; $form.Controls.Add($pRepo); $py += 100
+# Panel is background-only; TextBoxes go directly on the form to avoid panel clipping/interaction bugs
+$repoAbsY = $py
+$pRepo = New-Panel 10 $py 380 150; $form.Controls.Add($pRepo); $py += 158
+
 $lblRepoHint = New-Label 'owner/repo format' 10 6 200 18
 $lblRepoHint.ForeColor = [System.Drawing.Color]::FromArgb(88, 96, 105)
 $lblRepoHint.Font = New-Object System.Drawing.Font('Segoe UI', 8)
 $pRepo.Controls.Add($lblRepoHint)
-$pRepo.Controls.Add((New-Label 'Repo 1' 10 28))
-$txtRepo1 = New-TextBox $cfg['Repo1'] 80 27 290; $pRepo.Controls.Add($txtRepo1)
-$pRepo.Controls.Add((New-Label 'Repo 2' 10 56))
-$txtRepo2 = New-TextBox $cfg['Repo2'] 80 55 290; $pRepo.Controls.Add($txtRepo2)
-# Repo3은 현재 CommitView가 최대 2개 트래킹이지만 확장용으로 유지
+$pRepo.Controls.Add((New-Label 'Repo 1' 10 32))
+$pRepo.Controls.Add((New-Label 'Repo 2' 10 68))
+$pRepo.Controls.Add((New-Label 'Repo 3' 10 104))
+
+$txtRepo1 = New-TextBox $cfg['Repo1'] 90 ($repoAbsY + 30) 280
+$txtRepo2 = New-TextBox $cfg['Repo2'] 90 ($repoAbsY + 66) 280
+$txtRepo3 = New-TextBox $cfg['Repo3'] 90 ($repoAbsY + 102) 280
+$form.Controls.Add($txtRepo1)
+$form.Controls.Add($txtRepo2)
+$form.Controls.Add($txtRepo3)
+$pRepo.SendToBack()  # Panel goes behind form-level TextBoxes
 
 # ------------------------------------------------------------------
 # Section: CommitView
@@ -212,7 +224,7 @@ $btnSave.Add_Click({
         WeeksToShow    = $txtWeeks.Text.Trim()
         Repo1          = $txtRepo1.Text.Trim()
         Repo2          = $txtRepo2.Text.Trim()
-        Repo3          = ''
+        Repo3          = $txtRepo3.Text.Trim()
         AutoRefreshMin = $txtAR.Text.Trim()
     }
 
