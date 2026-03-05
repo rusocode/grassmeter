@@ -19,23 +19,35 @@ $OutputIni = Join-Path $SkinPath 'CommitView.ini'
 # ------------------------------------------------------------------
 # Parse Settings.inc
 # ------------------------------------------------------------------
-$Token = ''; $Repo1 = ''; $Repo2 = ''; $Repo3 = ''; $AutoRefreshMin = 0
+$Token = ''; $Repo1 = ''; $Repo2 = ''; $Repo3 = ''; $AutoRefreshMin = 0; $Theme = 'Green'
 
 $sf = Join-Path (Split-Path $SkinPath -Parent) 'Settings.inc'
 if (Test-Path $sf) {
     foreach ($line in [System.IO.File]::ReadAllLines($sf, [System.Text.UTF8Encoding]::new($true))) {
-        if ($line -match '^GitHubToken\s*=\s*(.+)$')      { $Token          = $Matches[1].Trim() }
-        if ($line -match '^Repo1\s*=\s*(.+)$')            { $Repo1           = $Matches[1].Trim() }
-        if ($line -match '^Repo2\s*=\s*(.+)$')            { $Repo2           = $Matches[1].Trim() }
-        if ($line -match '^Repo3\s*=\s*(.+)$')            { $Repo3           = $Matches[1].Trim() }
-        if ($line -match '^AutoRefreshMin\s*=\s*(\d+)$')  { $AutoRefreshMin  = [int]$Matches[1] }
+        if ($line -match '^GitHubToken\s*=\s*(.+)$')      { $Token         = $Matches[1].Trim() }
+        if ($line -match '^Repo1\s*=\s*(.+)$')            { $Repo1         = $Matches[1].Trim() }
+        if ($line -match '^Repo2\s*=\s*(.+)$')            { $Repo2         = $Matches[1].Trim() }
+        if ($line -match '^Repo3\s*=\s*(.+)$')            { $Repo3         = $Matches[1].Trim() }
+        if ($line -match '^AutoRefreshMin\s*=\s*(\d+)$')  { $AutoRefreshMin = [int]$Matches[1] }
+        if ($line -match '^ColorTheme\s*=\s*(.+)$')       { $Theme         = $Matches[1].Trim() }
     }
     L 'Settings.inc loaded'
 } else {
     L 'WARNING: Settings.inc not found'
 }
 if ($AutoRefreshMin -gt 0 -and $AutoRefreshMin -lt 1) { $AutoRefreshMin = 1 }
-L "Token=$(if($Token){'set'}else{'NOT SET'})  Repo1=$Repo1  Repo2=$Repo2  Repo3=$Repo3  AutoRefreshMin=$AutoRefreshMin"
+
+# Theme accent color for section divider lines (medium brightness, semi-transparent)
+$cAccent = switch ($Theme) {
+    'Purple' { '105,35,180,160' }
+    'Blue'   { '15,80,190,160'  }
+    'Red'    { '165,32,32,160'  }
+    'Orange' { '180,92,0,160'   }
+    'Pink'   { '180,0,100,160'  }
+    'Mono'   { '100,100,100,160'}
+    default  { '0,135,62,160'   }  # Green
+}
+L "Token=$(if($Token){'set'}else{'NOT SET'})  Repo1=$Repo1  Repo2=$Repo2  Repo3=$Repo3  AutoRefreshMin=$AutoRefreshMin  Theme=$Theme"
 
 if ($Token -eq '' -or $Token -eq 'ghp_your_token_here') { L 'ERROR: GitHubToken not set'; exit 1 }
 
@@ -169,7 +181,7 @@ foreach ($g in $Groups) {
     W 'Meter=Shape'
     W "X=$lineStartX"
     W "Y=$lineY"
-    W ('Shape=Line 0,0,' + ($lineEndX - $lineStartX) + ',0 | StrokeWidth 1 | Stroke Color 48,54,61,255')
+    W ('Shape=Line 0,0,' + ($lineEndX - $lineStartX) + ',0 | StrokeWidth 1 | Stroke Color ' + $cAccent)
     W ''
 
     W "[MHdr${gi}Name]"
