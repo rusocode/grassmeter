@@ -39,13 +39,13 @@ if ($AutoRefreshMin -gt 0 -and $AutoRefreshMin -lt 1) { $AutoRefreshMin = 1 }
 
 # Theme accent color for section divider lines (medium brightness, semi-transparent)
 $cAccent = switch ($Theme) {
-    'Purple' { '105,35,180,160' }
-    'Blue'   { '15,80,190,160'  }
-    'Red'    { '165,32,32,160'  }
-    'Orange' { '180,92,0,160'   }
-    'Pink'   { '180,0,100,160'  }
-    'Mono'   { '100,100,100,160'}
-    default  { '0,135,62,160'   }  # Green
+    'Purple' { '155,100,240,220' }
+    'Blue'   { '40,125,245,220'  }
+    'Red'    { '220,58,58,220'   }
+    'Orange' { '235,125,0,220'   }
+    'Pink'   { '235,0,140,220'   }
+    'Mono'   { '155,155,155,220' }
+    default  { '50,185,80,220'   }  # Green
 }
 L "Token=$(if($Token){'set'}else{'NOT SET'})  Repo1=$Repo1  Repo2=$Repo2  Repo3=$Repo3  AutoRefreshMin=$AutoRefreshMin  Theme=$Theme"
 
