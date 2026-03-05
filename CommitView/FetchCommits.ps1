@@ -63,8 +63,10 @@ $Rows = [System.Collections.Generic.List[hashtable]]::new()
 # Ensure TLS 1.2 for GitHub API
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
 
-foreach ($repo in @($Repo1, $Repo2, $Repo3)) {
-    if ($repo -eq '') { continue }
+$configuredRepos = @($Repo1, $Repo2, $Repo3) | Where-Object { $_ -ne '' }
+$successCount    = 0
+
+foreach ($repo in $configuredRepos) {
     L "Fetching: $repo"
     try {
         $url  = 'https://api.github.com/repos/' + $repo + '/commits?per_page=10'
@@ -80,17 +82,18 @@ foreach ($repo in @($Repo1, $Repo2, $Repo3)) {
             $rel = Get-RelativeTime $c.commit.author.date
             $Rows.Add(@{ name=$name; msg=$msg; time=$rel; url=$ghUrl })
         }
+        $successCount++
         L "  OK  $($commits.Count) commits"
     } catch {
         L ('  FAIL: ' + $_.Exception.Message)
     }
 }
 
-L ("Total rows: " + $Rows.Count)
+L ("Total rows: $($Rows.Count)  success=$successCount/$($configuredRepos.Count)")
 
-# Guard: if no rows fetched (all repos failed), keep existing INI unchanged
-if ($Rows.Count -eq 0) {
-    L 'WARNING: No rows fetched - keeping existing CommitView.ini unchanged'
+# Guard: if any configured repo failed, keep existing INI to prevent partial/shrunken widget
+if ($successCount -lt $configuredRepos.Count) {
+    L "WARNING: $($configuredRepos.Count - $successCount) repo(s) failed - keeping existing CommitView.ini unchanged"
     L '=== DONE (no update) ==='
     exit 0
 }
