@@ -114,7 +114,8 @@ $BtnRowH = 24
 $GW      = $Weeks * $Step - $CellGap
 $GH      = 7 * $Step - $CellGap
 $WW      = $Padding * 2 + $DLW + $GW
-$WH      = $Padding * 2 + $MonthH + $GH + $TotalH + $BtnRowH
+$LegendH = 18
+$WH      = $Padding * 2 + $MonthH + $GH + $TotalH + $BtnRowH + $LegendH
 $OX      = $Padding + $DLW
 $OY      = $Padding + $MonthH
 
@@ -330,6 +331,56 @@ W "W=20"
 W "H=20"
 W "LeftMouseUpAction=[`"wscript.exe`" `"#CURRENTPATH#launcher.vbs`"]"
 W "ToolTipText=Click to reload (applies Settings.inc changes)"
+W ""
+
+# Color legend: Less [L0][L1][L2][L3][L4] More
+$legCS      = [Math]::Min($CellSize, 10)   # cell size in legend (capped at 10)
+$legCG      = 2
+$legTW      = 26                            # "Less" / "More" text width
+$legCellsW  = 5 * $legCS + 4 * $legCG
+$legTotalW  = $legTW + 4 + $legCellsW + 4 + $legTW
+$legX       = [int](($WW - $legTotalW) / 2)
+$legY       = $bby + $BtnRowH + 2
+$legCY      = $legY + [int](($LegendH - 4 - $legCS) / 2)
+$legColors  = @($cL0, $cL1, $cL2, $cL3, $cL4)
+
+W "[MLegLess]"
+W "Meter=String"
+W "X=$legX"
+W "Y=$legY"
+W "W=$legTW"
+W "H=$($LegendH - 4)"
+W "Text=Less"
+W "FontColor=88,96,105,180"
+W "FontSize=7"
+W "FontFace=Segoe UI"
+W "AntiAlias=1"
+W "StringAlign=Right"
+W ""
+
+$legCX = $legX + $legTW + 4
+for ($li = 0; $li -lt 5; $li++) {
+    $lcx = $legCX + $li * ($legCS + $legCG)
+    W "[MLegC$li]"
+    W "Meter=Shape"
+    W "X=$lcx"
+    W "Y=$legCY"
+    W ("Shape=Rectangle 0,0," + $legCS + "," + $legCS + ",2 | Fill Color " + $legColors[$li] + " | StrokeWidth 0")
+    W ""
+}
+
+$legMoreX = $legCX + $legCellsW + 4
+W "[MLegMore]"
+W "Meter=String"
+W "X=$legMoreX"
+W "Y=$legY"
+W "W=$legTW"
+W "H=$($LegendH - 4)"
+W "Text=More"
+W "FontColor=88,96,105,180"
+W "FontSize=7"
+W "FontFace=Segoe UI"
+W "AntiAlias=1"
 W ""
 
 # Save with UTF-8 BOM
