@@ -171,12 +171,13 @@ $Step    = $CellSize + $CellGap
 $DLW     = 28
 $MonthH  = 22
 $TotalH  = 24
-$BtnRowH = 26
+$BtnRowH  = 26
+$IconRowH = 28
 $GW      = $Weeks * $Step - $CellGap
 $GH      = 7 * $Step - $CellGap
 $WW      = $Padding * 2 + $DLW + $GW
 $LegendH = 18
-$WH      = $Padding * 2 + $MonthH + $GH + $TotalH + $BtnRowH + $LegendH
+$WH      = $Padding * 2 + $MonthH + $GH + $TotalH + $BtnRowH + $LegendH + $IconRowH
 $OX      = $Padding + $DLW
 $OY      = $Padding + $MonthH
 
@@ -393,32 +394,6 @@ foreach ($p in $Periods) {
     $pi++
 }
 
-# Icon buttons - bottom-left, aligned with period selector row
-$iy = $bby + [int](($BtnRowH - 20) / 2)
-
-W "[MSettings]"
-W "Meter=Image"
-W "ImageName=#ROOTCONFIGPATH#@Resources\Icons\settings.png"
-W "X=$Padding"
-W "Y=$iy"
-W "W=20"
-W "H=20"
-W "LeftMouseUpAction=[`"wscript.exe`" `"#ROOTCONFIGPATH#launch_settings.vbs`"]"
-W "ToolTipText=Open Settings"
-W ""
-
-$rix = $Padding + 26
-W "[MRefresh]"
-W "Meter=Image"
-W "ImageName=#ROOTCONFIGPATH#@Resources\Icons\refresh.png"
-W "X=$rix"
-W "Y=$iy"
-W "W=20"
-W "H=20"
-W "LeftMouseUpAction=[`"wscript.exe`" `"#CURRENTPATH#launcher.vbs`"]"
-W "ToolTipText=Click to reload (applies Settings.inc changes)"
-W ""
-
 # Color legend: Less [L0][L1][L2][L3][L4] More
 $legCS      = [Math]::Min($CellSize, 10)   # cell size in legend (capped at 10)
 $legCG      = 2
@@ -491,9 +466,37 @@ if ($TotalStars -ge 0) {
     W ""
 }
 
-# Save with UTF-8 BOM
+# Icon buttons - bottom of widget (below legend)
+$iy  = $legY + $LegendH + [int](($IconRowH - 20) / 2)
+$rix = $Padding + 26
+
+W "[MSettings]"
+W "Meter=Image"
+W "ImageName=#ROOTCONFIGPATH#@Resources\Icons\settings.png"
+W "X=$Padding"
+W "Y=$iy"
+W "W=20"
+W "H=20"
+W "LeftMouseUpAction=[`"wscript.exe`" `"#ROOTCONFIGPATH#launch_settings.vbs`"]"
+W "ToolTipText=Open Settings"
+W ""
+
+W "[MRefresh]"
+W "Meter=Image"
+W "ImageName=#ROOTCONFIGPATH#@Resources\Icons\refresh.png"
+W "X=$rix"
+W "Y=$iy"
+W "W=20"
+W "H=20"
+W "LeftMouseUpAction=[`"wscript.exe`" `"#CURRENTPATH#launcher.vbs`"]"
+W "ToolTipText=Click to reload (applies Settings.inc changes)"
+W ""
+
+# Save - UTF-16 LE for proper Unicode support (★ etc.), atomic write
 $content = [string]::Join("`r`n", $lines)
-[System.IO.File]::WriteAllText($OutputIni, $content, [System.Text.UTF8Encoding]::new($true))
+$tempIni = $OutputIni + '.tmp'
+[System.IO.File]::WriteAllText($tempIni, $content, [System.Text.Encoding]::Unicode)
+Move-Item -Path $tempIni -Destination $OutputIni -Force
 L ("Saved: " + $OutputIni + "  cells=" + $idx)
 
 # Trigger Rainmeter skin refresh automatically
