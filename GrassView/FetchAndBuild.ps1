@@ -336,9 +336,9 @@ for ($c = 0; $c -lt $Weeks; $c++) {
 $ty = $OY + $GH + 6
 W "[MTotal]"
 W "Meter=String"
-W "X=$OX"
+W "X=$Padding"
 W "Y=$ty"
-W "W=$GW"
+W "W=$($WW - $Padding * 2)"
 W "H=20"
 W ("Text=" + $Total + " contributions in the last " + $Weeks + " weeks")
 W "FontColor=139,148,158,255"
