@@ -472,19 +472,21 @@ W ""
 
 # Star count - right-aligned under the period buttons (shares same X zone)
 if ($TotalStars -ge 0) {
+    # Place star starting at the 1Y button's left edge
     $starChar = [char]0x2605
+    $starX    = $WW - $Padding - $PBtnW
+    $starW    = $PBtnW + $Padding
     W "[MStarCount]"
     W "Meter=String"
-    W "X=$bbx"
+    W "X=$starX"
     W "Y=$legY"
-    W "W=$PTotalW"
+    W "W=$starW"
     W "H=$($LegendH - 4)"
     W ("Text=" + $starChar + " " + $TotalStars)
     W "FontColor=210,175,55,220"
     W "FontSize=10"
     W "FontFace=Segoe UI"
     W "AntiAlias=1"
-    W "StringAlign=Right"
     W ("ToolTipText=Total stars: " + ($configuredRepos -join ', '))
     W ""
 }
