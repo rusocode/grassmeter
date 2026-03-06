@@ -470,16 +470,14 @@ W "FontFace=Segoe UI"
 W "AntiAlias=1"
 W ""
 
-# Star count - right side of bottom row, same height as icons/legend
+# Star count - right-aligned under the period buttons (shares same X zone)
 if ($TotalStars -ge 0) {
-    $starW    = 90
-    $starX    = $WW - $Padding - $starW
     $starChar = [char]0x2605
     W "[MStarCount]"
     W "Meter=String"
-    W "X=$starX"
+    W "X=$bbx"
     W "Y=$legY"
-    W "W=$starW"
+    W "W=$PTotalW"
     W "H=$($LegendH - 4)"
     W ("Text=" + $starChar + " " + $TotalStars)
     W "FontColor=210,175,55,220"
