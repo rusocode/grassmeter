@@ -172,12 +172,12 @@ $DLW     = 28
 $MonthH  = 22
 $TotalH  = 24
 $BtnRowH  = 26
-$IconRowH = 28
+$StarRowH = 28   # star count row (between period buttons and legend)
+$LegendH  = 24   # legend row (also houses icon buttons, 20px tall)
 $GW      = $Weeks * $Step - $CellGap
 $GH      = 7 * $Step - $CellGap
 $WW      = $Padding * 2 + $DLW + $GW
-$LegendH = 18
-$WH      = $Padding * 2 + $MonthH + $GH + $TotalH + $BtnRowH + $LegendH + $IconRowH
+$WH      = $Padding * 2 + $MonthH + $GH + $TotalH + $BtnRowH + $StarRowH + $LegendH
 $OX      = $Padding + $DLW
 $OY      = $Padding + $MonthH
 
@@ -394,16 +394,65 @@ foreach ($p in $Periods) {
     $pi++
 }
 
-# Color legend: Less [L0][L1][L2][L3][L4] More
+# Star count - right-aligned below period buttons (big)
+if ($TotalStars -ge 0) {
+    $starW    = 100
+    $starX    = $WW - $Padding - $starW
+    $starY    = $bby + $BtnRowH
+    $starText = "$TotalStars"
+    $starChar = [char]0x2605
+    W "[MStarCount]"
+    W "Meter=String"
+    W "X=$starX"
+    W "Y=$starY"
+    W "W=$starW"
+    W "H=$StarRowH"
+    W ("Text=" + $starChar + " " + $starText)
+    W "FontColor=210,175,55,230"
+    W "FontSize=16"
+    W "FontFace=Segoe UI"
+    W "AntiAlias=1"
+    W "StringAlign=Right"
+    W ("ToolTipText=Total stars: " + ($configuredRepos -join ', '))
+    W ""
+}
+
+# Color legend: Less [L0][L1][L2][L3][L4] More  +  icon buttons (left)
 $legCS      = [Math]::Min($CellSize, 10)   # cell size in legend (capped at 10)
 $legCG      = 2
 $legTW      = 26                            # "Less" / "More" text width
 $legCellsW  = 5 * $legCS + 4 * $legCG
 $legTotalW  = $legTW + 4 + $legCellsW + 4 + $legTW
 $legX       = [int](($WW - $legTotalW) / 2)
-$legY       = $bby + $BtnRowH + 2
-$legCY      = $legY + [int](($LegendH - 4 - $legCS) / 2)
+$legY       = $bby + $BtnRowH + $StarRowH
+$legCY      = $legY + [int](($LegendH - $legCS) / 2)
 $legColors  = @($cL0, $cL1, $cL2, $cL3, $cL4)
+
+# Icon buttons - left side of legend row
+$iy  = $legY + [int](($LegendH - 20) / 2)
+$rix = $Padding + 26
+
+W "[MSettings]"
+W "Meter=Image"
+W "ImageName=#ROOTCONFIGPATH#@Resources\Icons\settings.png"
+W "X=$Padding"
+W "Y=$iy"
+W "W=20"
+W "H=20"
+W "LeftMouseUpAction=[`"wscript.exe`" `"#ROOTCONFIGPATH#launch_settings.vbs`"]"
+W "ToolTipText=Open Settings"
+W ""
+
+W "[MRefresh]"
+W "Meter=Image"
+W "ImageName=#ROOTCONFIGPATH#@Resources\Icons\refresh.png"
+W "X=$rix"
+W "Y=$iy"
+W "W=20"
+W "H=20"
+W "LeftMouseUpAction=[`"wscript.exe`" `"#CURRENTPATH#launcher.vbs`"]"
+W "ToolTipText=Click to reload (applies Settings.inc changes)"
+W ""
 
 W "[MLegLess]"
 W "Meter=String"
@@ -442,54 +491,6 @@ W "FontColor=88,96,105,180"
 W "FontSize=8"
 W "FontFace=Segoe UI"
 W "AntiAlias=1"
-W ""
-
-# Star count (right-aligned in legend row)
-if ($TotalStars -ge 0) {
-    $starW    = 80
-    $starX    = $WW - $Padding - $starW
-    $starText = [string]::Format('{0:N0}', $TotalStars)
-    $starChar = [char]0x2605
-    W "[MStarCount]"
-    W "Meter=String"
-    W "X=$starX"
-    W "Y=$legY"
-    W "W=$starW"
-    W "H=$($LegendH - 4)"
-    W ("Text=" + $starChar + " " + $starText)
-    W "FontColor=210,175,55,220"
-    W "FontSize=8"
-    W "FontFace=Segoe UI"
-    W "AntiAlias=1"
-    W "StringAlign=Right"
-    W ("ToolTipText=Total stars: " + ($configuredRepos -join ', '))
-    W ""
-}
-
-# Icon buttons - bottom of widget (below legend)
-$iy  = $legY + $LegendH + [int](($IconRowH - 20) / 2)
-$rix = $Padding + 26
-
-W "[MSettings]"
-W "Meter=Image"
-W "ImageName=#ROOTCONFIGPATH#@Resources\Icons\settings.png"
-W "X=$Padding"
-W "Y=$iy"
-W "W=20"
-W "H=20"
-W "LeftMouseUpAction=[`"wscript.exe`" `"#ROOTCONFIGPATH#launch_settings.vbs`"]"
-W "ToolTipText=Open Settings"
-W ""
-
-W "[MRefresh]"
-W "Meter=Image"
-W "ImageName=#ROOTCONFIGPATH#@Resources\Icons\refresh.png"
-W "X=$rix"
-W "Y=$iy"
-W "W=20"
-W "H=20"
-W "LeftMouseUpAction=[`"wscript.exe`" `"#CURRENTPATH#launcher.vbs`"]"
-W "ToolTipText=Click to reload (applies Settings.inc changes)"
 W ""
 
 # Save - UTF-16 LE for proper Unicode support (★ etc.), atomic write
