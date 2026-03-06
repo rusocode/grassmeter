@@ -172,12 +172,11 @@ $DLW     = 28
 $MonthH  = 22
 $TotalH  = 24
 $BtnRowH  = 26
-$StarRowH = 28   # star count row (between period buttons and legend)
-$LegendH  = 24   # legend row (also houses icon buttons, 20px tall)
+$LegendH  = 24   # bottom row: icons (left) + Less/More (center) + star (right)
 $GW      = $Weeks * $Step - $CellGap
 $GH      = 7 * $Step - $CellGap
 $WW      = $Padding * 2 + $DLW + $GW
-$WH      = $Padding * 2 + $MonthH + $GH + $TotalH + $BtnRowH + $StarRowH + $LegendH
+$WH      = $Padding * 2 + $MonthH + $GH + $TotalH + $BtnRowH + $LegendH
 $OX      = $Padding + $DLW
 $OY      = $Padding + $MonthH
 
@@ -394,41 +393,19 @@ foreach ($p in $Periods) {
     $pi++
 }
 
-# Star count - right-aligned below period buttons (big)
-if ($TotalStars -ge 0) {
-    $starW    = 100
-    $starX    = $WW - $Padding - $starW
-    $starY    = $bby + $BtnRowH
-    $starText = "$TotalStars"
-    $starChar = [char]0x2605
-    W "[MStarCount]"
-    W "Meter=String"
-    W "X=$starX"
-    W "Y=$starY"
-    W "W=$starW"
-    W "H=$StarRowH"
-    W ("Text=" + $starChar + " " + $starText)
-    W "FontColor=210,175,55,230"
-    W "FontSize=16"
-    W "FontFace=Segoe UI"
-    W "AntiAlias=1"
-    W "StringAlign=Right"
-    W ("ToolTipText=Total stars: " + ($configuredRepos -join ', '))
-    W ""
-}
-
-# Color legend: Less [L0][L1][L2][L3][L4] More  +  icon buttons (left)
-$legCS      = [Math]::Min($CellSize, 10)   # cell size in legend (capped at 10)
+# Bottom row: icons (left) + Less/More legend (center) + star (right)
+# All three elements share the same $legY row
+$legCS      = [Math]::Min($CellSize, 10)
 $legCG      = 2
-$legTW      = 26                            # "Less" / "More" text width
+$legTW      = 26
 $legCellsW  = 5 * $legCS + 4 * $legCG
 $legTotalW  = $legTW + 4 + $legCellsW + 4 + $legTW
 $legX       = [int](($WW - $legTotalW) / 2)
-$legY       = $bby + $BtnRowH + $StarRowH
+$legY       = $bby + $BtnRowH + 2
 $legCY      = $legY + [int](($LegendH - $legCS) / 2)
 $legColors  = @($cL0, $cL1, $cL2, $cL3, $cL4)
 
-# Icon buttons - left side of legend row
+# Icon buttons - left side, vertically centered in LegendH row
 $iy  = $legY + [int](($LegendH - 20) / 2)
 $rix = $Padding + 26
 
@@ -492,6 +469,27 @@ W "FontSize=8"
 W "FontFace=Segoe UI"
 W "AntiAlias=1"
 W ""
+
+# Star count - right side of bottom row, same height as icons/legend
+if ($TotalStars -ge 0) {
+    $starW    = 90
+    $starX    = $WW - $Padding - $starW
+    $starChar = [char]0x2605
+    W "[MStarCount]"
+    W "Meter=String"
+    W "X=$starX"
+    W "Y=$legY"
+    W "W=$starW"
+    W "H=$($LegendH - 4)"
+    W ("Text=" + $starChar + " " + $TotalStars)
+    W "FontColor=210,175,55,220"
+    W "FontSize=10"
+    W "FontFace=Segoe UI"
+    W "AntiAlias=1"
+    W "StringAlign=Right"
+    W ("ToolTipText=Total stars: " + ($configuredRepos -join ', '))
+    W ""
+}
 
 # Save - UTF-16 LE for proper Unicode support (★ etc.), atomic write
 $content = [string]::Join("`r`n", $lines)
