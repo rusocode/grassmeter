@@ -70,7 +70,18 @@ elseif ($Theme -eq 'Red')    { $cBG='13,17,23,240'; $cL0='33,38,46,255'; $cL1='9
 elseif ($Theme -eq 'Orange') { $cBG='13,17,23,240'; $cL0='33,38,46,255'; $cL1='95,48,0,255';   $cL2='180,92,0,255';   $cL3='235,125,0,255';  $cL4='255,180,30,255'  }
 elseif ($Theme -eq 'Pink')   { $cBG='13,17,23,240'; $cL0='33,38,46,255'; $cL1='95,0,48,255';   $cL2='180,0,100,255';  $cL3='235,0,140,255';  $cL4='255,125,195,255' }
 elseif ($Theme -eq 'Mono')   { $cBG='13,17,23,240'; $cL0='33,38,46,255'; $cL1='55,55,55,255';  $cL2='100,100,100,255';$cL3='155,155,155,255';$cL4='210,210,210,255' }
+elseif ($Theme -eq 'Mint')   { $cBG='13,17,23,240'; $cL0='33,38,46,255'; $cL1='0,70,65,255';   $cL2='0,130,115,255';  $cL3='0,188,160,255';  $cL4='100,230,215,255' }
+elseif ($Theme -eq 'Light')  { $cBG='245,247,250,240'; $cL0='235,237,240,255'; $cL1='155,233,168,255'; $cL2='64,196,99,255'; $cL3='48,161,78,255'; $cL4='33,110,57,255' }
 L "Theme=$Theme  L0=[$cL0]  L4=[$cL4]"
+
+# UI palette - adapts for light vs dark backgrounds
+$isLight   = ($Theme -eq 'Light')
+$cStroke   = if ($isLight) { '208,215,222,255' } else { '48,54,61,255' }
+$cText     = if ($isLight) { '57,62,68,255'    } else { '139,148,158,255' }
+$cTextDim  = if ($isLight) { '110,119,129,180' } else { '88,96,105,180' }
+$cBtnAct   = if ($isLight) { '36,41,47,255'    } else { '220,220,220,255' }
+$cBtnInact = if ($isLight) { '110,119,129,180' } else { '88,96,105,180' }
+$cCellTip  = if ($isLight) { '80,90,100,180'   } else { '200,200,200,180' }
 
 # ------------------------------------------------------------------
 # GitHub GraphQL API
@@ -248,7 +259,7 @@ W "[MeterBG]"
 W "Meter=Shape"
 W "X=0"
 W "Y=0"
-W ("Shape=Rectangle 0,0," + $WW + "," + $WH + ",8 | Fill Color " + $cBG + " | StrokeWidth 1 | Stroke Color 48,54,61,255")
+W ("Shape=Rectangle 0,0," + $WW + "," + $WH + ",8 | Fill Color " + $cBG + " | StrokeWidth 1 | Stroke Color " + $cStroke)
 W ""
 
 # Month labels
@@ -262,7 +273,7 @@ foreach ($c in ($ML.Keys | Sort-Object { [int]$_ })) {
     W "W=40"
     W "H=$MonthH"
     W ("Text=" + $ML[$c])
-    W "FontColor=139,148,158,255"
+    W "FontColor=$cText"
     W "FontSize=9"
     W "FontFace=Segoe UI"
     W "AntiAlias=1"
@@ -281,7 +292,7 @@ for ($r = 0; $r -lt 7; $r++) {
     W "W=$DLW"
     W ("H=" + ($CellSize + 2))
     W ("Text=" + $DayNames[$r])
-    W "FontColor=139,148,158,255"
+    W "FontColor=$cText"
     W "FontSize=8"
     W "FontFace=Segoe UI"
     W "AntiAlias=1"
@@ -321,7 +332,7 @@ for ($c = 0; $c -lt $Weeks; $c++) {
         W "X=$x"
         W "Y=$y"
         if ($cell.date -eq $todayStr) {
-            W ("Shape=Rectangle 0,0," + $CellSize + "," + $CellSize + ",2 | Fill Color " + $clr + " | StrokeWidth 1.5 | Stroke Color 200,200,200,180")
+            W ("Shape=Rectangle 0,0," + $CellSize + "," + $CellSize + ",2 | Fill Color " + $clr + " | StrokeWidth 1.5 | Stroke Color " + $cCellTip)
         } else {
             W ("Shape=Rectangle 0,0," + $CellSize + "," + $CellSize + ",2 | Fill Color " + $clr + " | StrokeWidth 0")
         }
@@ -342,7 +353,7 @@ W "Y=$bby"
 W "W=$($bbx - $Padding - 8)"
 W "H=$BtnRowH"
 W ("Text=" + $Total + " contributions in the last " + $Weeks + " weeks")
-W "FontColor=139,148,158,255"
+W "FontColor=$cText"
 W "FontSize=10"
 W "FontFace=Segoe UI"
 W "AntiAlias=1"
@@ -353,7 +364,7 @@ foreach ($p in $Periods) {
     $pl  = $p.label; $pw = $p.weeks
     $bxi = $bbx + $pi * ($PBtnW + $PBtnGap)
     $isAct  = ($pw -eq $Weeks)
-    $fclr   = if ($isAct) { '220,220,220,255' } else { '88,96,105,180' }
+    $fclr   = if ($isAct) { $cBtnAct } else { $cBtnInact }
     $bstyle = if ($isAct) { 'Bold' } else { 'Normal' }
 
     W ("[MBtnP" + $pl + "]")
@@ -384,7 +395,7 @@ W "Y=$($bby + $BtnRowH)"
 W "W=$($WW - $Padding * 2)"
 W "H=$StreakH"
 W "Text=$streakText"
-W "FontColor=139,148,158,200"
+W "FontColor=$cText"
 W "FontSize=10"
 W "FontFace=Segoe UI"
 W "AntiAlias=1"
@@ -435,7 +446,7 @@ W "Y=$legY"
 W "W=$legTW"
 W "H=$($LegendH - 4)"
 W "Text=Less"
-W "FontColor=88,96,105,180"
+W "FontColor=$cTextDim"
 W "FontSize=8"
 W "FontFace=Segoe UI"
 W "AntiAlias=1"
@@ -461,7 +472,7 @@ W "Y=$legY"
 W "W=$legTW"
 W "H=$($LegendH - 4)"
 W "Text=More"
-W "FontColor=88,96,105,180"
+W "FontColor=$cTextDim"
 W "FontSize=8"
 W "FontFace=Segoe UI"
 W "AntiAlias=1"
@@ -506,6 +517,7 @@ if (Test-Path $rmExe) {
 } else {
     L "WARNING: Rainmeter.exe not found - refresh manually"
 }
+
 
 L '=== DONE ==='
 Write-Output ("SUCCESS:" + $Total)

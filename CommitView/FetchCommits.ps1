@@ -45,6 +45,8 @@ $cAccent = switch ($Theme) {
     'Orange' { '235,125,0,220'   }
     'Pink'   { '235,0,140,220'   }
     'Mono'   { '155,155,155,220' }
+    'Light'  { '48,161,78,220'   }
+    'Mint'   { '0,188,160,220'   }
     default  { '50,185,80,220'   }  # Green
 }
 L "Token=$(if($Token){'set'}else{'NOT SET'})  Repo1=$Repo1  Repo2=$Repo2  Repo3=$Repo3  AutoRefreshMin=$AutoRefreshMin  Theme=$Theme"
@@ -142,8 +144,13 @@ foreach ($row in $Rows) {
 
 $WH = $Padding * 2 + $Groups.Count * $HeaderH + $Rows.Count * $RowH + $BtnAreaH
 
-$cBG     = '13,17,23,240'
-$cStroke = '48,54,61,255'
+$isLight   = ($Theme -eq 'Light')
+$cBG       = if ($isLight) { '245,247,250,240' } else { '13,17,23,240' }
+$cStroke   = if ($isLight) { '208,215,222,255' } else { '48,54,61,255' }
+$cTextName = if ($isLight) { '36,41,47,255'    } else { '175,185,195,255' }
+$cTextBody = if ($isLight) { '57,62,68,255'    } else { '139,148,158,255' }
+$cTextMeta = if ($isLight) { '110,119,129,255' } else { '140,150,160,255' }
+$cTextDim  = if ($isLight) { '110,119,129,200' } else { '88,96,105,200' }
 
 # ------------------------------------------------------------------
 # Generate CommitView.ini
@@ -195,7 +202,7 @@ foreach ($g in $Groups) {
     W 'W=130'
     W "H=$HeaderH"
     W "Text=$($g.name)"
-    W 'FontColor=175,185,195,255'
+    W "FontColor=$cTextName"
     W 'FontSize=9'
     W 'FontFace=Segoe UI'
     W 'StringStyle=Bold'
@@ -216,7 +223,7 @@ foreach ($g in $Groups) {
         W "W=$AuthorColW"
         W "H=$RowH"
         W "Text=$($row.author)"
-        W 'FontColor=140,150,160,255'
+        W "FontColor=$cTextMeta"
         W 'FontSize=10'
         W 'FontFace=Segoe UI'
         W 'AntiAlias=1'
@@ -231,7 +238,7 @@ foreach ($g in $Groups) {
         W "W=$MsgColW"
         W "H=$RowH"
         W "Text=$($row.msg)"
-        W 'FontColor=139,148,158,255'
+        W "FontColor=$cTextBody"
         W 'FontSize=10'
         W 'FontFace=Segoe UI'
         W 'AntiAlias=1'
@@ -246,7 +253,7 @@ foreach ($g in $Groups) {
         W "W=$TimeColW"
         W "H=$RowH"
         W "Text=$($row.time)"
-        W 'FontColor=88,96,105,200'
+        W "FontColor=$cTextDim"
         W 'FontSize=9'
         W 'FontFace=Segoe UI'
         W 'AntiAlias=1'

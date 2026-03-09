@@ -125,7 +125,7 @@ $cboTheme = New-Object System.Windows.Forms.ComboBox
 $cboTheme.DropDownStyle = 'DropDownList'
 $cboTheme.Left = 120; $cboTheme.Top = 7; $cboTheme.Width = 140
 $cboTheme.BackColor = $clrInput; $cboTheme.ForeColor = $clrText; $cboTheme.FlatStyle = 'Flat'
-@('Green','Purple','Blue','Red','Orange','Pink','Mono') | ForEach-Object { $cboTheme.Items.Add($_) | Out-Null }
+@('Green','Purple','Blue','Red','Orange','Pink','Mono','Mint','Light') | ForEach-Object { $cboTheme.Items.Add($_) | Out-Null }
 $idx = $cboTheme.Items.IndexOf($cfg['ColorTheme']); if ($idx -ge 0) { $cboTheme.SelectedIndex = $idx } else { $cboTheme.SelectedIndex = 0 }
 $pApp.Controls.Add($cboTheme)
 
@@ -240,7 +240,7 @@ $btnSave.Add_Click({
 GitHubUsername=$($newCfg.GitHubUsername)
 GitHubToken=$($newCfg.GitHubToken)
 
-; Color theme: Green / Purple / Blue / Red / Orange / Pink / Mono
+; Color theme: Green / Purple / Blue / Red / Orange / Pink / Mono / Mint / Light
 ColorTheme=$($newCfg.ColorTheme)
 
 ; Opacity (0-255, 200 = slightly transparent)
@@ -267,16 +267,18 @@ AutoRefreshMin=$($newCfg.AutoRefreshMin)
 
     [System.IO.File]::WriteAllText($settingsFile, $content, [System.Text.UTF8Encoding]::new($true))
 
-    # Launch GrassView refresh
-    $gvLauncher = Join-Path $root 'GrassView\launcher.vbs'
-    if (Test-Path $gvLauncher) {
-        Start-Process 'wscript.exe' -ArgumentList "`"$gvLauncher`"" -WindowStyle Hidden
-    }
-
-    # Launch CommitView refresh
-    $cvLauncher = Join-Path $root 'CommitView\launcher_commits.vbs'
-    if (Test-Path $cvLauncher) {
-        Start-Process 'wscript.exe' -ArgumentList "`"$cvLauncher`"" -WindowStyle Hidden
+    # Refresh all three skins directly (bypass VBS to avoid path/encoding issues)
+    $psArgs = '-ExecutionPolicy Bypass -NoProfile -WindowStyle Hidden -NonInteractive'
+    @(
+        @{ ps1 = 'GrassView\FetchAndBuild.ps1'; skin = 'GrassView' },
+        @{ ps1 = 'CommitView\FetchCommits.ps1'; skin = 'CommitView' },
+        @{ ps1 = 'IssueView\FetchIssues.ps1';  skin = 'IssueView' }
+    ) | ForEach-Object {
+        $ps1  = Join-Path $root $_.ps1
+        $skin = Join-Path $root $_.skin
+        if (Test-Path $ps1) {
+            Start-Process 'powershell.exe' -ArgumentList "$psArgs -File `"$ps1`" -SkinPath `"$skin`"" -WindowStyle Hidden
+        }
     }
 
     $form.Close()

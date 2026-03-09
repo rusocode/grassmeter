@@ -80,6 +80,8 @@ Open `Settings.inc` to customize. After editing, click the **R** button on the w
 | `Orange` | Orange tones |
 | `Pink` | Pink tones |
 | `Mono` | Grayscale |
+| `Mint` | Teal/mint tones |
+| `Light` | Light background (GitHub light mode style) |
 
 ---
 
@@ -182,7 +184,8 @@ grassmeter\
 - [ ] GitHub OAuth Device Flow (no manual token setup)
 - [ ] Auto-refresh on system startup
 - [ ] `.rmskin` package for one-click install
-- [ ] Light background color theme
+- [x] Light background color theme (`Light`)
+- [x] Mint/teal color theme (`Mint`)
 - [ ] API error display directly on widget
 - [ ] Private repo contribution toggle
 
