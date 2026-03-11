@@ -81,6 +81,8 @@ Open `Settings.inc` to customize. After editing, click the **R** button on the w
 | `Pink` | Pink tones |
 | `Mono` | Grayscale |
 | `Mint` | Teal/mint tones |
+| `Yellow` | Neon yellow tones |
+| `Cyan` | Neon cyan/electric blue tones |
 | `Light` | Light background (GitHub light mode style) |
 
 ---

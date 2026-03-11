@@ -47,6 +47,8 @@ $cAccent = switch ($Theme) {
     'Mono'   { '155,155,155,220' }
     'Light'  { '48,161,78,220'   }
     'Mint'   { '0,188,160,220'   }
+    'Yellow' { '220,195,0,220'   }
+    'Cyan'   { '0,195,235,220'   }
     default  { '50,185,80,220'   }
 }
 # Issue badge: GitHub green (always), PR badge: purple (always) - visually distinct
