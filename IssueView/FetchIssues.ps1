@@ -150,11 +150,11 @@ $AgeColX   = $WW - $Padding - $AgeColW
 $TitleColW = $AgeColX - $TitleColX - 6
 $SummaryH  = 24
 $BtnAreaH  = 28
-$DivLineX  = $Padding + 130 + 8
 
 $totalRows = $totalIssues + $totalPRs
 $contentH  = if ($Groups.Count -eq 0) { 40 } else { $Groups.Count * $HeaderH + $totalRows * $RowH }
 $WH        = $Padding * 2 + $contentH + $SummaryH + $BtnAreaH
+$lineEndX  = $WW - $Padding
 
 $isLight   = ($Theme -eq 'Light')
 $cBG       = if ($isLight) { '245,247,250,240' } else { '13,17,23,240' }
@@ -213,9 +213,9 @@ if ($Groups.Count -eq 0) {
 
         W "[MHdr${gi}Line]"
         W 'Meter=Shape'
-        W "X=$DivLineX"
+        W "X=$TitleColX"
         W "Y=$lineY"
-        W ('Shape=Line 0,0,' + ($WW - $Padding - $DivLineX) + ',0 | StrokeWidth 1 | Stroke Color ' + $cAccent)
+        W ('Shape=Line 0,0,' + ($lineEndX - $TitleColX) + ',0 | StrokeWidth 1 | Stroke Color ' + $cAccent)
         W ''
 
         W "[MHdr${gi}Name]"
@@ -230,6 +230,7 @@ if ($Groups.Count -eq 0) {
         W 'FontFace=Segoe UI'
         W 'StringStyle=Bold'
         W 'AntiAlias=1'
+        W 'ClipString=2'
         W ('LeftMouseUpAction=["' + $g.url + '/issues"]')
         W ''
 

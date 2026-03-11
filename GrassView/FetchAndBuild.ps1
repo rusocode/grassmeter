@@ -57,8 +57,36 @@ if ($WeeksOverride -gt 0) {
     }
 }
 
-if ($Username -eq '' -or $Username -eq 'your_username') { L 'ERROR: GitHubUsername not set'; exit 1 }
-if ($Token    -eq '' -or $Token    -eq 'ghp_your_token_here') { L 'ERROR: GitHubToken not set'; exit 1 }
+if ($Token -eq '' -or $Token -eq 'ghp_your_token_here') { L 'ERROR: GitHubToken not set'; exit 1 }
+
+# Auto-detect username from token if not configured in Settings.inc
+if ($Username -eq '' -or $Username -eq 'your_username') {
+    L 'GitHubUsername not set - auto-detecting from token...'
+    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+    try {
+        $wc = New-Object System.Net.WebClient
+        $wc.Encoding = [System.Text.Encoding]::UTF8
+        $wc.Headers['Authorization'] = "Bearer $Token"
+        $wc.Headers['User-Agent']    = 'Rainmeter-GitHubGrass/1.0'
+        $me = ($wc.DownloadString('https://api.github.com/user')) | ConvertFrom-Json
+        $Username = $me.login
+        L "Auto-detected username: $Username"
+        # Persist to Settings.inc so future runs are faster
+        if (Test-Path $sf) {
+            $sfc = [System.IO.File]::ReadAllText($sf, [System.Text.UTF8Encoding]::new($true))
+            if ($sfc -match 'GitHubUsername=') {
+                $sfc = $sfc -replace 'GitHubUsername=.*', "GitHubUsername=$Username"
+            } else {
+                $sfc = $sfc -replace 'GitHubToken=', "GitHubUsername=$Username`r`nGitHubToken="
+            }
+            [System.IO.File]::WriteAllText($sf, $sfc, [System.Text.UTF8Encoding]::new($true))
+            L "Saved username to Settings.inc"
+        }
+    } catch {
+        L ('Auto-detect username failed: ' + $_.Exception.Message)
+        exit 1
+    }
+}
 
 # ------------------------------------------------------------------
 # Color themes
@@ -345,19 +373,28 @@ for ($c = 0; $c -lt $Weeks; $c++) {
 # Row 1: total text (left) + period buttons (right) - same Y, directly below grid
 $bby = $OY + $GH + 4
 $bbx = $OX + $ContentW - $PTotalW
+$TotalTextW = $bbx - $Padding - 8
 
-W "[MTotal]"
-W "Meter=String"
-W "X=$Padding"
-W "Y=$bby"
-W "W=$($bbx - $Padding - 8)"
-W "H=$BtnRowH"
-W ("Text=" + $Total + " contributions in the last " + $Weeks + " weeks")
-W "FontColor=$cText"
-W "FontSize=10"
-W "FontFace=Segoe UI"
-W "AntiAlias=1"
-W ""
+if ($TotalTextW -ge 40) {
+    $TotalText = if ($TotalTextW -ge 120) {
+        "$Total contributions in the last $Weeks weeks"
+    } else {
+        "$Total contributions"
+    }
+    W "[MTotal]"
+    W "Meter=String"
+    W "X=$Padding"
+    W "Y=$bby"
+    W "W=$TotalTextW"
+    W "H=$BtnRowH"
+    W "Text=$TotalText"
+    W "FontColor=$cText"
+    W "FontSize=10"
+    W "FontFace=Segoe UI"
+    W "AntiAlias=1"
+    W "ClipString=2"
+    W ""
+}
 
 $pi = 0
 foreach ($p in $Periods) {
@@ -399,6 +436,7 @@ W "FontColor=$cText"
 W "FontSize=10"
 W "FontFace=Segoe UI"
 W "AntiAlias=1"
+W "ClipString=2"
 W ""
 
 # Bottom row: icons (left) + Less/More legend (center) + star (right)

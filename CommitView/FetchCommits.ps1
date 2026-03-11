@@ -181,18 +181,17 @@ W ''
 $gi  = 0   # group index (for unique meter names)
 $ri  = 0   # row index
 $y   = $Padding
-$lineStartX = $Padding + 130 + 8   # line begins after text area
 $lineEndX   = $WW - $Padding
 
 foreach ($g in $Groups) {
-    # -- Section header: repo name (left) + divider line (right) --
+    # -- Section header: repo name (left) + full-width divider line --
     $lineY = $y + [int]($HeaderH / 2)
 
     W "[MHdr${gi}Line]"
     W 'Meter=Shape'
-    W "X=$lineStartX"
+    W "X=$MsgColX"
     W "Y=$lineY"
-    W ('Shape=Line 0,0,' + ($lineEndX - $lineStartX) + ',0 | StrokeWidth 1 | Stroke Color ' + $cAccent)
+    W ('Shape=Line 0,0,' + ($lineEndX - $MsgColX) + ',0 | StrokeWidth 1 | Stroke Color ' + $cAccent)
     W ''
 
     W "[MHdr${gi}Name]"
@@ -207,6 +206,7 @@ foreach ($g in $Groups) {
     W 'FontFace=Segoe UI'
     W 'StringStyle=Bold'
     W 'AntiAlias=1'
+    W 'ClipString=2'
     W ('LeftMouseUpAction=["' + $g.url + '"]')
     W ''
 

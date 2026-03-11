@@ -177,6 +177,11 @@ grassmeter\
 - [x] **CommitView widget** — show latest commits (up to 10) from up to 3 repositories
 - [x] **CommitView auto-refresh** — configurable interval via `AutoRefreshMin` in `Settings.inc`
 - [x] **Dual widget support** — GrassView and CommitView load as separate Rainmeter configs simultaneously
+- [x] **Light / Mint themes** — full color palette + accent line sync across all skins
+- [x] **CommitView / IssueView: section divider line aligned to content** — separator line starts at the main content column (X=MsgColX / X=TitleColX), not at the widget left edge
+- [x] **CommitView: repo name ellipsis** — long repo names truncate with `...` so they don't overflow into the divider line
+- [x] **GrassView: responsive bottom UI** — total text hidden when widget is too narrow (1W/1M/3M), period buttons always visible at any size; streak and legend texts clipped instead of overflowing
+- [x] **GrassView: auto-detect username** — if `GitHubUsername` is blank in Settings.inc, automatically fetches login from GitHub API and saves it back
 
 ### Planned / TODO
 
@@ -184,10 +189,23 @@ grassmeter\
 - [ ] GitHub OAuth Device Flow (no manual token setup)
 - [ ] Auto-refresh on system startup
 - [ ] `.rmskin` package for one-click install
-- [x] Light background color theme (`Light`)
-- [x] Mint/teal color theme (`Mint`)
 - [ ] API error display directly on widget
 - [ ] Private repo contribution toggle
+
+---
+
+## Development Guidelines
+
+### Cross-skin visual consistency
+
+All skins (GrassView, CommitView, IssueView) must share the same visual rules:
+
+- **Divider line alignment** — Section separator lines must start at the X position of the main content column, not at `$Padding`.
+  - CommitView: `X=$MsgColX` (= `$Padding + $AuthorColW + 8` = 112)
+  - IssueView: `X=$TitleColX` (= `$Padding + $TypeColW + $NumColW + 4` = 88)
+  - The line length is always `$lineEndX - <ContentColX>` so the right edge stays flush with the widget border.
+- **Color variables** — All theme colors (`$cBG`, `$cStroke`, `$cAccent`, `$cTextName`, etc.) must be kept in sync across all `Fetch*.ps1` scripts whenever a new theme is added.
+- **Widget width** — All skins use `$WW = 500` and `$Padding = 14` as the canonical values.
 
 ---
 
