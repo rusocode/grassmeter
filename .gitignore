@@ -1,8 +1,7 @@
 # User credentials - never commit
 Settings.inc
 
-# Auto-generated files
-GrassView.ini
+# Auto-generated files (placeholder versions are tracked)
 GrassView.ini.tmp
 CommitView.ini
 CommitView.ini.tmp
