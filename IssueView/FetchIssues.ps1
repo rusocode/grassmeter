@@ -33,7 +33,7 @@ if (Test-Path $sf) {
     L 'Settings.inc loaded'
 } else { L 'WARNING: Settings.inc not found' }
 
-if ($Token -eq '' -or $Token -eq 'ghp_your_token_here') { L 'ERROR: GitHubToken not set'; exit 1 }
+if ($Token -eq '' -or $Token -match '^ghp_x+$' -or $Token -eq 'ghp_your_token_here') { L 'ERROR: GitHubToken not set'; exit 1 }
 
 # ------------------------------------------------------------------
 # Theme colors

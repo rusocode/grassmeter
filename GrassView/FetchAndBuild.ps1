@@ -57,7 +57,7 @@ if ($WeeksOverride -gt 0) {
     }
 }
 
-if ($Token -eq '' -or $Token -eq 'ghp_your_token_here') { L 'ERROR: GitHubToken not set'; exit 1 }
+if ($Token -eq '' -or $Token -match '^ghp_x+$' -or $Token -eq 'ghp_your_token_here') { L 'ERROR: GitHubToken not set'; exit 1 }
 
 # Auto-detect username from token if not configured in Settings.inc
 if ($Username -eq '' -or $Username -eq 'your_username') {

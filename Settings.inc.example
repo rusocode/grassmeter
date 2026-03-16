@@ -10,7 +10,7 @@ GitHubUsername=your_github_username
 GitHubToken=ghp_xxxxxxxxxxxxxxxxxxxx
 
 ; ── Color Theme ───────────────────────────────────────────────────
-; Options: Green / Purple / Blue / Red / Orange / Pink / Mono / Mint / Light
+; Options: Green / Purple / Blue / Red / Orange / Pink / Mono / Mint / Yellow / Cyan / Light
 ColorTheme=Green
 
 ; ── Size ──────────────────────────────────────────────────────────

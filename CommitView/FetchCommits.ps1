@@ -53,7 +53,7 @@ $cAccent = switch ($Theme) {
 }
 L "Token=$(if($Token){'set'}else{'NOT SET'})  Repo1=$Repo1  Repo2=$Repo2  Repo3=$Repo3  AutoRefreshMin=$AutoRefreshMin  Theme=$Theme"
 
-if ($Token -eq '' -or $Token -eq 'ghp_your_token_here') { L 'ERROR: GitHubToken not set'; exit 1 }
+if ($Token -eq '' -or $Token -match '^ghp_x+$' -or $Token -eq 'ghp_your_token_here') { L 'ERROR: GitHubToken not set'; exit 1 }
 
 # ------------------------------------------------------------------
 # Helpers
