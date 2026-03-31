@@ -23,28 +23,29 @@ L '=== GitHub Grass v1.0 ==='
 # Parse Settings.inc
 # ------------------------------------------------------------------
 $Username = ''; $Token = ''; $Weeks = 52; $CellSize = 11
-$CellGap  = 2;  $Padding = 14; $Theme = 'Green'
+$CellGap  = 2;  $Padding = 14; $Theme = 'Green'; $AutoRefreshMin = 0
 $Repo1 = ''; $Repo2 = ''; $Repo3 = ''
 
 $sf = Join-Path (Split-Path $SkinPath -Parent) 'Settings.inc'
 if (Test-Path $sf) {
     foreach ($line in [System.IO.File]::ReadAllLines($sf, [System.Text.UTF8Encoding]::new($true))) {
-        if ($line -match '^GitHubUsername\s*=\s*(.+)$') { $Username = $Matches[1].Trim() }
-        if ($line -match '^GitHubToken\s*=\s*(.+)$')    { $Token    = $Matches[1].Trim() }
-        if ($line -match '^WeeksToShow\s*=\s*(\d+)')    { $Weeks    = [int]$Matches[1] }
-        if ($line -match '^CellSize\s*=\s*(\d+)')       { $CellSize = [int]$Matches[1] }
-        if ($line -match '^CellGap\s*=\s*(\d+)')        { $CellGap  = [int]$Matches[1] }
-        if ($line -match '^Padding\s*=\s*(\d+)')        { $Padding  = [int]$Matches[1] }
-        if ($line -match '^ColorTheme\s*=\s*(.+)$')     { $Theme    = $Matches[1].Trim() }
-        if ($line -match '^Repo1\s*=\s*(.+)$')          { $Repo1    = $Matches[1].Trim() }
-        if ($line -match '^Repo2\s*=\s*(.+)$')          { $Repo2    = $Matches[1].Trim() }
-        if ($line -match '^Repo3\s*=\s*(.+)$')          { $Repo3    = $Matches[1].Trim() }
+        if ($line -match '^GitHubUsername\s*=\s*(.+)$')   { $Username       = $Matches[1].Trim() }
+        if ($line -match '^GitHubToken\s*=\s*(.+)$')      { $Token          = $Matches[1].Trim() }
+        if ($line -match '^WeeksToShow\s*=\s*(\d+)')      { $Weeks          = [int]$Matches[1] }
+        if ($line -match '^CellSize\s*=\s*(\d+)')         { $CellSize       = [int]$Matches[1] }
+        if ($line -match '^CellGap\s*=\s*(\d+)')          { $CellGap        = [int]$Matches[1] }
+        if ($line -match '^Padding\s*=\s*(\d+)')          { $Padding        = [int]$Matches[1] }
+        if ($line -match '^ColorTheme\s*=\s*(.+)$')       { $Theme          = $Matches[1].Trim() }
+        if ($line -match '^AutoRefreshMin\s*=\s*(\d+)$')  { $AutoRefreshMin = [int]$Matches[1] }
+        if ($line -match '^Repo1\s*=\s*(.+)$')            { $Repo1          = $Matches[1].Trim() }
+        if ($line -match '^Repo2\s*=\s*(.+)$')            { $Repo2          = $Matches[1].Trim() }
+        if ($line -match '^Repo3\s*=\s*(.+)$')            { $Repo3          = $Matches[1].Trim() }
     }
     L 'Settings.inc loaded'
 } else {
     L 'WARNING: Settings.inc not found, using defaults'
 }
-L "Username=$Username  Weeks=$Weeks  Theme=$Theme  CellSize=$CellSize"
+L "Username=$Username  Weeks=$Weeks  Theme=$Theme  CellSize=$CellSize  AutoRefreshMin=$AutoRefreshMin"
 
 # Apply WeeksOverride and persist to Settings.inc
 if ($WeeksOverride -gt 0) {
@@ -452,6 +453,17 @@ $legX       = [int](($WW - $legTotalW) / 2)
 $legY       = $bby + $BtnRowH + $StreakH
 $legCY      = $legY + [int](($LegendH - $legCS) / 2)
 $legColors  = @($cL0, $cL1, $cL2, $cL3, $cL4)
+
+# Auto-refresh measure (hidden, fires every AutoRefreshMin minutes)
+# Update=30000 (30s), so UpdateDivider = AutoRefreshMin * 2 to get minutes
+if ($AutoRefreshMin -ge 1) {
+    W '[MAutoRefresh]'
+    W 'Measure=Calc'
+    W 'Formula=0'
+    W "UpdateDivider=$($AutoRefreshMin * 2)"
+    W ('OnUpdateAction=["wscript.exe" "#CURRENTPATH#launcher.vbs"]')
+    W ''
+}
 
 # Icon buttons - left side, vertically centered in LegendH row
 $iy  = $legY + [int](($LegendH - 20) / 2)
