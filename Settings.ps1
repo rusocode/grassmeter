@@ -213,6 +213,13 @@ $form.Controls.Add($btnCancel)
 # Save action
 # ------------------------------------------------------------------
 $btnSave.Add_Click({
+    # Normalize repo: strip full GitHub URLs to owner/repo format
+    function Normalize-Repo([string]$r) {
+        $r = $r.Trim().TrimEnd('/')
+        if ($r -match 'github\.com[/:](.+/.+)$') { return $Matches[1] }
+        return $r
+    }
+
     $newCfg = @{
         GitHubUsername = $txtUser.Text.Trim()
         GitHubToken    = $txtToken.Text.Trim()
@@ -222,9 +229,9 @@ $btnSave.Add_Click({
         CellGap        = $txtCellGap.Text.Trim()
         Padding        = $txtPadding.Text.Trim()
         WeeksToShow    = $txtWeeks.Text.Trim()
-        Repo1          = $txtRepo1.Text.Trim()
-        Repo2          = $txtRepo2.Text.Trim()
-        Repo3          = $txtRepo3.Text.Trim()
+        Repo1          = Normalize-Repo $txtRepo1.Text
+        Repo2          = Normalize-Repo $txtRepo2.Text
+        Repo3          = Normalize-Repo $txtRepo3.Text
         AutoRefreshMin = $txtAR.Text.Trim()
     }
 
@@ -267,17 +274,16 @@ AutoRefreshMin=$($newCfg.AutoRefreshMin)
 
     [System.IO.File]::WriteAllText($settingsFile, $content, [System.Text.UTF8Encoding]::new($true))
 
-    # Refresh all three skins directly (bypass VBS to avoid path/encoding issues)
-    $psArgs = '-ExecutionPolicy Bypass -NoProfile -WindowStyle Hidden -NonInteractive'
-    @(
-        @{ ps1 = 'GrassView\FetchAndBuild.ps1'; skin = 'GrassView' },
-        @{ ps1 = 'CommitView\FetchCommits.ps1'; skin = 'CommitView' },
-        @{ ps1 = 'IssueView\FetchIssues.ps1';  skin = 'IssueView' }
-    ) | ForEach-Object {
-        $ps1  = Join-Path $root $_.ps1
-        $skin = Join-Path $root $_.skin
-        if (Test-Path $ps1) {
-            Start-Process 'powershell.exe' -ArgumentList "$psArgs -File `"$ps1`" -SkinPath `"$skin`"" -WindowStyle Hidden
+    # Refresh all three skins via their VBS launchers
+    $launchers = @(
+        'GrassView\launcher.vbs',
+        'CommitView\launcher_commits.vbs',
+        'IssueView\launcher_issues.vbs'
+    )
+    foreach ($l in $launchers) {
+        $p = Join-Path $root $l
+        if (Test-Path $p) {
+            [System.Diagnostics.Process]::Start('wscript.exe', "`"$p`"") | Out-Null
         }
     }
 

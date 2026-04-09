@@ -35,6 +35,16 @@ if (Test-Path $sf) {
 } else {
     L 'WARNING: Settings.inc not found'
 }
+# Normalize repo values: strip full GitHub URLs to owner/repo format
+function Normalize-Repo([string]$r) {
+    $r = $r.Trim().TrimEnd('/')
+    if ($r -match 'github\.com[/:](.+/.+)$') { return $Matches[1] }
+    return $r
+}
+$Repo1 = Normalize-Repo $Repo1
+$Repo2 = Normalize-Repo $Repo2
+$Repo3 = Normalize-Repo $Repo3
+
 if ($AutoRefreshMin -gt 0 -and $AutoRefreshMin -lt 1) { $AutoRefreshMin = 1 }
 
 # Theme accent color for section divider lines (medium brightness, semi-transparent)
@@ -85,12 +95,8 @@ $successCount    = 0
 foreach ($repo in $configuredRepos) {
     L "Fetching: $repo"
     try {
-        $url  = 'https://api.github.com/repos/' + $repo + '/commits?per_page=5'
-        # Use WebClient with explicit UTF-8 to correctly decode Korean/CJK commit messages
-        $wc   = New-Object System.Net.WebClient
-        $wc.Encoding = [System.Text.Encoding]::UTF8
-        foreach ($key in $Headers.Keys) { $wc.Headers[$key] = $Headers[$key] }
-        $commits = ($wc.DownloadString($url)) | ConvertFrom-Json
+        $url     = 'https://api.github.com/repos/' + $repo + '/commits?per_page=5'
+        $commits = Invoke-RestMethod -Uri $url -Headers $Headers -TimeoutSec 30 -ErrorAction Stop
         $name    = ($repo -split '/')[1]
         $ghUrl   = 'https://github.com/' + $repo
         foreach ($c in $commits) {

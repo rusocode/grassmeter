@@ -65,11 +65,7 @@ if ($Username -eq '' -or $Username -eq 'your_username') {
     L 'GitHubUsername not set - auto-detecting from token...'
     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
     try {
-        $wc = New-Object System.Net.WebClient
-        $wc.Encoding = [System.Text.Encoding]::UTF8
-        $wc.Headers['Authorization'] = "Bearer $Token"
-        $wc.Headers['User-Agent']    = 'Rainmeter-GitHubGrass/1.0'
-        $me = ($wc.DownloadString('https://api.github.com/user')) | ConvertFrom-Json
+        $me = Invoke-RestMethod -Uri 'https://api.github.com/user' -Headers @{ Authorization="Bearer $Token"; 'User-Agent'='Rainmeter-GitHubGrass/1.0' } -TimeoutSec 30 -ErrorAction Stop
         $Username = $me.login
         L "Auto-detected username: $Username"
         # Persist to Settings.inc so future runs are faster
@@ -128,7 +124,7 @@ $Headers = @{
 
 L 'Calling GitHub API...'
 try {
-    $R = Invoke-RestMethod -Uri 'https://api.github.com/graphql' -Method POST -Headers $Headers -Body $Body -ErrorAction Stop
+    $R = Invoke-RestMethod -Uri 'https://api.github.com/graphql' -Method POST -Headers $Headers -Body $Body -TimeoutSec 30 -ErrorAction Stop
     if ($R.errors) { L ("GraphQL error: " + $R.errors[0].message); exit 1 }
     $Cal   = $R.data.user.contributionsCollection.contributionCalendar
     $Total = $Cal.totalContributions
@@ -190,11 +186,7 @@ if ($configuredRepos.Count -gt 0) {
     $TotalStars = 0
     foreach ($repo in $configuredRepos) {
         try {
-            $wc = New-Object System.Net.WebClient
-            $wc.Encoding = [System.Text.Encoding]::UTF8
-            $wc.Headers['Authorization'] = "Bearer $Token"
-            $wc.Headers['User-Agent']    = 'Rainmeter-GitHubGrass/1.0'
-            $rd = ($wc.DownloadString('https://api.github.com/repos/' + $repo)) | ConvertFrom-Json
+            $rd = Invoke-RestMethod -Uri ('https://api.github.com/repos/' + $repo) -Headers @{ Authorization="Bearer $Token"; 'User-Agent'='Rainmeter-GitHubGrass/1.0' } -TimeoutSec 30 -ErrorAction Stop
             $TotalStars += [int]$rd.stargazers_count
             L "Stars: $repo = $($rd.stargazers_count)"
         } catch {
