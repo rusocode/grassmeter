@@ -111,7 +111,11 @@ foreach ($repo in $configuredRepos) {
     L "Fetching: $repo"
     try {
         $url     = 'https://api.github.com/repos/' + $repo + '/commits?per_page=5'
-        $commits = Invoke-RestMethod -Uri $url -Headers $Headers -TimeoutSec 30 -ErrorAction Stop
+        # Use WebClient with explicit UTF-8 to correctly decode Korean/CJK commit messages
+        $wc      = New-Object System.Net.WebClient
+        $wc.Encoding = [System.Text.Encoding]::UTF8
+        foreach ($key in $Headers.Keys) { $wc.Headers[$key] = $Headers[$key] }
+        $commits = ($wc.DownloadString($url)) | ConvertFrom-Json
         $name    = ($repo -split '/')[1]
         $ghUrl   = 'https://github.com/' + $repo
         foreach ($c in $commits) {

@@ -1,4 +1,4 @@
-﻿# =============================================================
+# =============================================================
 #  GitHub Grass for Rainmeter
 #  FetchAndBuild.ps1
 #  Fetches GitHub contribution data and generates GrassView.ini
@@ -6,7 +6,8 @@
 param(
     [string]$SkinPath     = '',
     [string]$OutputIni    = '',
-    [int]$WeeksOverride   = 0
+    [int]$WeeksOverride   = 0,
+    [switch]$YearMode
 )
 
 if (-not $SkinPath)  { $SkinPath  = Split-Path -Parent $MyInvocation.MyCommand.Path }
@@ -23,41 +24,65 @@ L '=== GitHub Grass v1.0 ==='
 # Parse Settings.inc
 # ------------------------------------------------------------------
 $Username = ''; $Token = ''; $Weeks = 52; $CellSize = 11
-$CellGap  = 2;  $Padding = 14; $Theme = 'Green'; $AutoRefreshMin = 0
+$CellGap  = 2;  $Padding = 14; $Theme = 'Green'
 $Repo1 = ''; $Repo2 = ''; $Repo3 = ''
+$IsYearMode = $true
 
 $sf = Join-Path (Split-Path $SkinPath -Parent) 'Settings.inc'
 if (Test-Path $sf) {
     foreach ($line in [System.IO.File]::ReadAllLines($sf, [System.Text.UTF8Encoding]::new($true))) {
-        if ($line -match '^GitHubUsername\s*=\s*(.+)$')   { $Username       = $Matches[1].Trim() }
-        if ($line -match '^GitHubToken\s*=\s*(.+)$')      { $Token          = $Matches[1].Trim() }
-        if ($line -match '^WeeksToShow\s*=\s*(\d+)')      { $Weeks          = [int]$Matches[1] }
-        if ($line -match '^CellSize\s*=\s*(\d+)')         { $CellSize       = [int]$Matches[1] }
-        if ($line -match '^CellGap\s*=\s*(\d+)')          { $CellGap        = [int]$Matches[1] }
-        if ($line -match '^Padding\s*=\s*(\d+)')          { $Padding        = [int]$Matches[1] }
-        if ($line -match '^ColorTheme\s*=\s*(.+)$')       { $Theme          = $Matches[1].Trim() }
-        if ($line -match '^AutoRefreshMin\s*=\s*(\d+)$')  { $AutoRefreshMin = [int]$Matches[1] }
-        if ($line -match '^Repo1\s*=\s*(.+)$')            { $Repo1          = $Matches[1].Trim() }
-        if ($line -match '^Repo2\s*=\s*(.+)$')            { $Repo2          = $Matches[1].Trim() }
-        if ($line -match '^Repo3\s*=\s*(.+)$')            { $Repo3          = $Matches[1].Trim() }
+        if ($line -match '^GitHubUsername\s*=\s*(.+)$') { $Username = $Matches[1].Trim() }
+        if ($line -match '^GitHubToken\s*=\s*(.+)$')    { $Token    = $Matches[1].Trim() }
+        if ($line -match '^WeeksToShow\s*=\s*(\d+)')    { $Weeks    = [int]$Matches[1] }
+        if ($line -match '^CellSize\s*=\s*(\d+)')       { $CellSize = [int]$Matches[1] }
+        if ($line -match '^CellGap\s*=\s*(\d+)')        { $CellGap  = [int]$Matches[1] }
+        if ($line -match '^Padding\s*=\s*(\d+)')        { $Padding  = [int]$Matches[1] }
+        if ($line -match '^ColorTheme\s*=\s*(.+)$')     { $Theme    = $Matches[1].Trim() }
+        if ($line -match '^Repo1\s*=\s*(.+)$')          { $Repo1    = $Matches[1].Trim() }
+        if ($line -match '^Repo2\s*=\s*(.+)$')          { $Repo2    = $Matches[1].Trim() }
+        if ($line -match '^Repo3\s*=\s*(.+)$')          { $Repo3    = $Matches[1].Trim() }
+        if ($line -match '^YearMode\s*=\s*1')            { $IsYearMode = $true }
     }
     L 'Settings.inc loaded'
 } else {
     L 'WARNING: Settings.inc not found, using defaults'
 }
-L "Username=$Username  Weeks=$Weeks  Theme=$Theme  CellSize=$CellSize  AutoRefreshMin=$AutoRefreshMin"
+L "Username=$Username  Weeks=$Weeks  Theme=$Theme  CellSize=$CellSize"
 
 # Apply WeeksOverride and persist to Settings.inc
 if ($WeeksOverride -gt 0) {
     $Weeks = $WeeksOverride
     if (Test-Path $sf) {
         $sfc = [System.IO.File]::ReadAllText($sf, [System.Text.UTF8Encoding]::new($true))
-        $sfc = $sfc -replace 'WeeksToShow=\d+', ('WeeksToShow=' + $Weeks)
+        if ($sfc -match 'YearMode=') {
+            $sfc = $sfc -replace 'YearMode=\d', 'YearMode=1'
+        } else {
+            $sfc = $sfc.TrimEnd() + "`r`nYearMode=1`r`n"
+        }
         [System.IO.File]::WriteAllText($sf, $sfc, [System.Text.UTF8Encoding]::new($true))
-        L "WeeksOverride=$Weeks (Settings.inc updated)"
     }
 }
 
+# Activar YearMode si se pasó el switch
+if ($YearMode) { $IsYearMode = $true }
+
+# Cualquier WeeksOverride explícito desactiva YearMode
+if ($WeeksOverride -gt 0) { $IsYearMode = $false }
+
+# Persistir YearMode en Settings.inc
+if (Test-Path $sf) {
+    $sfc = [System.IO.File]::ReadAllText($sf, [System.Text.UTF8Encoding]::new($true))
+    $ymVal = if ($IsYearMode) { '1' } else { '0' }
+    if ($sfc -match 'YearMode=') {
+        $sfc = $sfc -replace 'YearMode=\d', "YearMode=$ymVal"
+    } else {
+        $sfc = $sfc.TrimEnd() + "`r`nYearMode=$ymVal`r`n"
+    }
+    [System.IO.File]::WriteAllText($sf, $sfc, [System.Text.UTF8Encoding]::new($true))
+}
+L "IsYearMode=$IsYearMode"
+
+# Upstream improvement: stricter token validation
 if ($Token -eq '' -or $Token -match '^ghp_x+$' -or $Token -eq 'ghp_your_token_here') { L 'ERROR: GitHubToken not set'; exit 1 }
 
 # Auto-detect username from token if not configured in Settings.inc
@@ -65,7 +90,11 @@ if ($Username -eq '' -or $Username -eq 'your_username') {
     L 'GitHubUsername not set - auto-detecting from token...'
     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
     try {
-        $me = Invoke-RestMethod -Uri 'https://api.github.com/user' -Headers @{ Authorization="Bearer $Token"; 'User-Agent'='Rainmeter-GitHubGrass/1.0' } -TimeoutSec 30 -ErrorAction Stop
+        $wc = New-Object System.Net.WebClient
+        $wc.Encoding = [System.Text.Encoding]::UTF8
+        $wc.Headers['Authorization'] = "Bearer $Token"
+        $wc.Headers['User-Agent']    = 'Rainmeter-GitHubGrass/1.0'
+        $me = ($wc.DownloadString('https://api.github.com/user')) | ConvertFrom-Json
         $Username = $me.login
         L "Auto-detected username: $Username"
         # Persist to Settings.inc so future runs are faster
@@ -111,10 +140,27 @@ $cBtnInact = if ($isLight) { '110,119,129,180' } else { '88,96,105,180' }
 $cCellTip  = if ($isLight) { '80,90,100,180'   } else { '200,200,200,180' }
 
 # ------------------------------------------------------------------
-# GitHub GraphQL API
+# GitHub GraphQL API - date range
 # ------------------------------------------------------------------
-$End   = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
-$Start = (Get-Date).AddDays(-($Weeks * 7)).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+$End = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+
+if ($IsYearMode) {
+    $yr        = (Get-Date).Year
+    $Start     = "$yr-01-01T00:00:00Z"
+    $yearStart = [datetime]::new($yr, 1, 1)
+    $yearEnd   = [datetime]::new($yr, 12, 31)
+    # Domingo anterior (o igual) al 1 de enero
+    $SD        = $yearStart.AddDays(-([int]$yearStart.DayOfWeek))
+    # Sabado posterior (o igual) al 31 de diciembre
+    $gridEndSat = $yearEnd.AddDays((6 - [int]$yearEnd.DayOfWeek) % 7)
+    $Weeks     = [int](($gridEndSat - $SD).TotalDays / 7)
+    L "YearMode: year=$yr  SD=$($SD.ToString('yyyy-MM-dd'))  Weeks=$Weeks"
+} else {
+    $Start    = (Get-Date).AddDays(-($Weeks * 7)).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+    $TodaySun = (Get-Date).Date.AddDays(-([int](Get-Date).DayOfWeek))
+    $SD       = $TodaySun.AddDays(-(($Weeks - 1) * 7))
+}
+
 $Body  = '{"query":"query($login:String!,$from:DateTime!,$to:DateTime!){user(login:$login){contributionsCollection(from:$from,to:$to){contributionCalendar{totalContributions weeks{contributionDays{contributionCount date weekday}}}}}}","variables":{"login":"' + $Username + '","from":"' + $Start + '","to":"' + $End + '"}}'
 $Headers = @{
     Authorization  = "Bearer $Token"
@@ -124,6 +170,7 @@ $Headers = @{
 
 L 'Calling GitHub API...'
 try {
+    # Upstream improvement: TimeoutSec 30
     $R = Invoke-RestMethod -Uri 'https://api.github.com/graphql' -Method POST -Headers $Headers -Body $Body -TimeoutSec 30 -ErrorAction Stop
     if ($R.errors) { L ("GraphQL error: " + $R.errors[0].message); exit 1 }
     $Cal   = $R.data.user.contributionsCollection.contributionCalendar
@@ -151,7 +198,6 @@ L "Max daily commits=$Max"
 $todayStr = (Get-Date).Date.ToString('yyyy-MM-dd')
 
 # Current streak: count consecutive days with contributions, backward from today
-# If today has no contributions, streak may still be alive from yesterday
 $curStreak = 0
 $chkDate   = (Get-Date).Date
 if (-not $Map.ContainsKey($todayStr) -or $Map[$todayStr] -eq 0) {
@@ -186,7 +232,11 @@ if ($configuredRepos.Count -gt 0) {
     $TotalStars = 0
     foreach ($repo in $configuredRepos) {
         try {
-            $rd = Invoke-RestMethod -Uri ('https://api.github.com/repos/' + $repo) -Headers @{ Authorization="Bearer $Token"; 'User-Agent'='Rainmeter-GitHubGrass/1.0' } -TimeoutSec 30 -ErrorAction Stop
+            $wc = New-Object System.Net.WebClient
+            $wc.Encoding = [System.Text.Encoding]::UTF8
+            $wc.Headers['Authorization'] = "Bearer $Token"
+            $wc.Headers['User-Agent']    = 'Rainmeter-GitHubGrass/1.0'
+            $rd = ($wc.DownloadString('https://api.github.com/repos/' + $repo)) | ConvertFrom-Json
             $TotalStars += [int]$rd.stargazers_count
             L "Stars: $repo = $($rd.stargazers_count)"
         } catch {
@@ -204,37 +254,21 @@ L "TotalStars=$TotalStars"
 $Step    = $CellSize + $CellGap
 $DLW     = 28
 $MonthH  = 22
-$BtnRowH  = 26   # row height: period buttons (right) + total text (left), same Y
-$StreakH  = 22   # streak text row
-$LegendH  = 24   # bottom row: icons (left) + Less/More (center) + star (right)
+$BtnRowH  = 26
+$StreakH  = 22
+$LegendH  = 24
+$PBtnW   = 26
 $GW      = $Weeks * $Step - $CellGap
 $GH      = 7 * $Step - $CellGap
-$WW      = $Padding * 2 + $DLW + $GW
+$ContentW = $GW
+$WW      = $Padding * 2 + $DLW + $ContentW
 $WH      = $Padding * 2 + $MonthH + $GH + $BtnRowH + $StreakH + $LegendH
 $OX      = $Padding + $DLW
 $OY      = $Padding + $MonthH
 
-# Period selector
-$Periods = @(
-    @{label='1W'; weeks=1},
-    @{label='1M'; weeks=4},
-    @{label='3M'; weeks=13},
-    @{label='6M'; weeks=26},
-    @{label='1Y'; weeks=52}
-)
-$PBtnW   = 26
-$PBtnGap = 6
-$PTotalW = $Periods.Count * $PBtnW + ($Periods.Count - 1) * $PBtnGap
-
-$ContentW = [Math]::Max($GW, $PTotalW)
-$WW       = $Padding * 2 + $DLW + $ContentW
-
 L "Widget size: ${WW}x${WH}"
 
 # Build grid (col=week, row=weekday 0=Sun)
-# Start from Sunday of current week minus (Weeks-1) weeks, so last column always = current week
-$TodaySun = (Get-Date).Date.AddDays(-([int](Get-Date).DayOfWeek))
-$SD = $TodaySun.AddDays(-(($Weeks - 1) * 7))
 $Grid = @{}
 $cur  = $SD
 for ($c = 0; $c -lt $Weeks; $c++) {
@@ -253,7 +287,14 @@ $PM = -1
 for ($c = 0; $c -lt $Weeks; $c++) {
     $d = $Grid["$c,0"]
     if ($d) {
-        $m = [int](Get-Date $d.date).Month
+        $colDate = [datetime]$d.date
+        # En YearMode, ignorar columnas de años anteriores (ej: dic 2025)
+        if ($IsYearMode -and $colDate.Year -lt (Get-Date).Year) {
+            # Forzar "Jan" en columna 0 aunque su domingo sea de 2025
+            if ($c -eq 0) { $ML[0] = 'Jan'; $PM = 1 }
+            continue
+        }
+        $m = [int]$colDate.Month
         if ($m -ne $PM) { $ML[$c] = $MN[$m]; $PM = $m }
     }
 }
@@ -274,8 +315,6 @@ W ""
 W "[Variables]"
 W ("SkinFolder=" + $SkinPath)
 W ""
-
-# (RunCommand measures removed - buttons call powershell directly)
 
 # Background
 W "[MeterBG]"
@@ -329,6 +368,12 @@ for ($c = 0; $c -lt $Weeks; $c++) {
         $cell = $Grid["$c,$r"]
         $cnt  = $cell.count
 
+        # En YearMode, no emitir celdas de años anteriores
+        if ($IsYearMode -and ([datetime]$cell.date).Year -lt (Get-Date).Year) {
+            $idx++
+            continue
+        }
+
         if ($cell.future -or $cnt -le 0) {
             $clr = $cL0
         } elseif ($Max -eq 0) {
@@ -365,58 +410,23 @@ for ($c = 0; $c -lt $Weeks; $c++) {
     }
 }
 
-# Row 1: total text (left) + period buttons (right) - same Y, directly below grid
+# Row 1: total contributions (ancho completo, sin botones)
 $bby = $OY + $GH + 4
-$bbx = $OX + $ContentW - $PTotalW
-$TotalTextW = $bbx - $Padding - 8
 
-if ($TotalTextW -ge 40) {
-    $TotalText = if ($TotalTextW -ge 120) {
-        "$Total contributions in the last $Weeks weeks"
-    } else {
-        "$Total contributions"
-    }
-    W "[MTotal]"
-    W "Meter=String"
-    W "X=$Padding"
-    W "Y=$bby"
-    W "W=$TotalTextW"
-    W "H=$BtnRowH"
-    W "Text=$TotalText"
-    W "FontColor=$cText"
-    W "FontSize=10"
-    W "FontFace=Segoe UI"
-    W "AntiAlias=1"
-    W "ClipString=2"
-    W ""
-}
-
-$pi = 0
-foreach ($p in $Periods) {
-    $pl  = $p.label; $pw = $p.weeks
-    $bxi = $bbx + $pi * ($PBtnW + $PBtnGap)
-    $isAct  = ($pw -eq $Weeks)
-    $fclr   = if ($isAct) { $cBtnAct } else { $cBtnInact }
-    $bstyle = if ($isAct) { 'Bold' } else { 'Normal' }
-
-    W ("[MBtnP" + $pl + "]")
-    W "Meter=String"
-    W "X=$bxi"
-    W "Y=$bby"
-    W "W=$PBtnW"
-    W "H=$BtnRowH"
-    W "Text=$pl"
-    W "FontColor=$fclr"
-    W "FontSize=9"
-    W "FontFace=Segoe UI"
-    W "AntiAlias=1"
-    W "StringAlign=Center"
-    W "StringStyle=$bstyle"
-    W ("LeftMouseUpAction=[`"wscript.exe`" `"#CURRENTPATH#launcher.vbs`" " + $pw + "]")
-    W ("ToolTipText=Show contributions for last " + $pl)
-    W ""
-    $pi++
-}
+$TotalText = "$Total contributions in $((Get-Date).Year)"
+W "[MTotal]"
+W "Meter=String"
+W "X=$Padding"
+W "Y=$bby"
+W "W=$($WW - $Padding * 2)"
+W "H=$BtnRowH"
+W "Text=$TotalText"
+W "FontColor=$cText"
+W "FontSize=10"
+W "FontFace=Segoe UI"
+W "AntiAlias=1"
+W "ClipString=2"
+W ""
 
 # Row 2: streak text
 $streakText = if ($curStreak -gt 0) { "$curStreak day streak  |  Best: $longestStreak days" } else { "Best: $longestStreak days" }
@@ -434,8 +444,7 @@ W "AntiAlias=1"
 W "ClipString=2"
 W ""
 
-# Bottom row: icons (left) + Less/More legend (center) + star (right)
-# All three elements share the same $legY row
+# Bottom row: icons + Less/More legend + star
 $legCS      = [Math]::Min($CellSize, 10)
 $legCG      = 2
 $legTW      = 26
@@ -446,18 +455,6 @@ $legY       = $bby + $BtnRowH + $StreakH
 $legCY      = $legY + [int](($LegendH - $legCS) / 2)
 $legColors  = @($cL0, $cL1, $cL2, $cL3, $cL4)
 
-# Auto-refresh measure (hidden, fires every AutoRefreshMin minutes)
-# Update=30000 (30s), so UpdateDivider = AutoRefreshMin * 2 to get minutes
-if ($AutoRefreshMin -ge 1) {
-    W '[MAutoRefresh]'
-    W 'Measure=Calc'
-    W 'Formula=0'
-    W "UpdateDivider=$($AutoRefreshMin * 2)"
-    W ('OnUpdateAction=["wscript.exe" "#CURRENTPATH#launcher.vbs"]')
-    W ''
-}
-
-# Icon buttons - left side, vertically centered in LegendH row
 $iy  = $legY + [int](($LegendH - 20) / 2)
 $rix = $Padding + 26
 
@@ -522,9 +519,8 @@ W "FontFace=Segoe UI"
 W "AntiAlias=1"
 W ""
 
-# Star count - right-aligned under the period buttons (shares same X zone)
+# Star count - right-aligned
 if ($TotalStars -ge 0) {
-    # Place star starting at the 1Y button's left edge
     $starChar = [char]0x2605
     $starX    = $WW - $Padding - $PBtnW
     $starW    = $PBtnW + $Padding
@@ -543,7 +539,7 @@ if ($TotalStars -ge 0) {
     W ""
 }
 
-# Save - UTF-16 LE for proper Unicode support (★ etc.), atomic write
+# Save - UTF-16 LE, atomic write
 $content = [string]::Join("`r`n", $lines)
 $tempIni = $OutputIni + '.tmp'
 [System.IO.File]::WriteAllText($tempIni, $content, [System.Text.Encoding]::Unicode)
@@ -561,7 +557,6 @@ if (Test-Path $rmExe) {
 } else {
     L "WARNING: Rainmeter.exe not found - refresh manually"
 }
-
 
 L '=== DONE ==='
 Write-Output ("SUCCESS:" + $Total)
