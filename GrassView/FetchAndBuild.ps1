@@ -21,6 +21,73 @@ function L($m) {
 L '=== GitHub Grass v1.0 ==='
 
 # ------------------------------------------------------------------
+# Rainmeter refresh + visible error state
+# ------------------------------------------------------------------
+$cErr = '248,81,73,255'
+
+function Invoke-RainmeterRefresh {
+    $config  = (Split-Path (Split-Path $SkinPath -Parent) -Leaf) + '\' + (Split-Path $SkinPath -Leaf)
+    $iniFile = [System.IO.Path]::GetFileName($OutputIni)
+    $rmExe   = "$env:ProgramFiles\Rainmeter\Rainmeter.exe"
+    if (-not (Test-Path $rmExe)) { $rmExe = "${env:ProgramFiles(x86)}\Rainmeter\Rainmeter.exe" }
+    if (Test-Path $rmExe) {
+        Start-Process $rmExe -ArgumentList "!Refresh `"$config`" `"$iniFile`"" -ErrorAction SilentlyContinue
+        L "Rainmeter refresh triggered: $config\$iniFile"
+    } else {
+        L 'WARNING: Rainmeter.exe not found - refresh manually'
+    }
+}
+
+# Overlays a banner on the last generated widget so a failed fetch is visible
+# instead of silently leaving stale data on screen.
+function Show-Error($msg) {
+    if (-not (Test-Path $OutputIni)) { L 'No GrassView.ini yet - cannot show error banner'; return }
+    try {
+        $txt = [System.IO.File]::ReadAllText($OutputIni, [System.Text.Encoding]::Unicode)
+    } catch {
+        L ('Cannot read GrassView.ini for error banner: ' + $_.Exception.Message); return
+    }
+
+    # Drop any previous banner so repeated failures do not stack up
+    $txt = [regex]::Replace($txt, '(?ms)^\[MErrBanner\].*?(?=^\[|\z)', '')
+
+    # Widget width comes from the background shape; fall back to a sane default
+    $w = 400
+    if ($txt -match '(?m)^Shape=Rectangle 0,0,(\d+),') { $w = [int]$Matches[1] }
+
+    # '#' delimits variables in Rainmeter, so strip it from API messages
+    $safeMsg = (($msg -replace '[\r\n#]+', ' ') -replace '\s+', ' ').Trim()
+    $stamp   = Get-Date -f 'HH:mm'
+    $banner  = @(
+        '[MErrBanner]'
+        'Meter=String'
+        'X=12'
+        'Y=0'
+        ('W=' + ($w - 24))
+        'H=14'
+        ("Text=! $safeMsg ($stamp)")
+        ("FontColor=$cErr")
+        'FontSize=8'
+        'FontFace=Segoe UI'
+        'AntiAlias=1'
+        'ClipString=2'
+        ("ToolTipText=Last refresh failed at ${stamp}: $safeMsg")
+        ''
+    ) -join "`r`n"
+
+    $tmp = $OutputIni + '.tmp'
+    try {
+        [System.IO.File]::WriteAllText($tmp, ($txt.TrimEnd() + "`r`n`r`n" + $banner), [System.Text.Encoding]::Unicode)
+        Move-Item -Path $tmp -Destination $OutputIni -Force -ErrorAction Stop
+        L "Error banner shown: $safeMsg"
+        Invoke-RainmeterRefresh
+    } catch {
+        L ('Failed to write error banner: ' + $_.Exception.Message)
+        if (Test-Path $tmp) { Remove-Item $tmp -Force -ErrorAction SilentlyContinue }
+    }
+}
+
+# ------------------------------------------------------------------
 # Parse Settings.inc
 # ------------------------------------------------------------------
 $Username = ''; $Token = ''; $Weeks = 52; $CellSize = 11
@@ -83,7 +150,11 @@ if (Test-Path $sf) {
 L "IsYearMode=$IsYearMode"
 
 # Upstream improvement: stricter token validation
-if ($Token -eq '' -or $Token -match '^ghp_x+$' -or $Token -eq 'ghp_your_token_here') { L 'ERROR: GitHubToken not set'; exit 1 }
+if ($Token -eq '' -or $Token -match '^ghp_x+$' -or $Token -eq 'ghp_your_token_here') {
+    L 'ERROR: GitHubToken not set'
+    Show-Error 'GitHub token not set - open Settings'
+    exit 1
+}
 
 # Auto-detect username from token if not configured in Settings.inc
 if ($Username -eq '' -or $Username -eq 'your_username') {
@@ -109,7 +180,10 @@ if ($Username -eq '' -or $Username -eq 'your_username') {
             L "Saved username to Settings.inc"
         }
     } catch {
-        L ('Auto-detect username failed: ' + $_.Exception.Message)
+        $em = $_.Exception.Message
+        L ('Auto-detect username failed: ' + $em)
+        if ($em -match '\(401\)') { Show-Error 'GitHub token invalid or expired - open Settings' }
+        else                      { Show-Error ('GitHub auth failed: ' + $em) }
         exit 1
     }
 }
@@ -172,12 +246,19 @@ L 'Calling GitHub API...'
 try {
     # Upstream improvement: TimeoutSec 30
     $R = Invoke-RestMethod -Uri 'https://api.github.com/graphql' -Method POST -Headers $Headers -Body $Body -TimeoutSec 30 -ErrorAction Stop
-    if ($R.errors) { L ("GraphQL error: " + $R.errors[0].message); exit 1 }
+    if ($R.errors) {
+        L ("GraphQL error: " + $R.errors[0].message)
+        Show-Error ('GitHub API error: ' + $R.errors[0].message)
+        exit 1
+    }
     $Cal   = $R.data.user.contributionsCollection.contributionCalendar
     $Total = $Cal.totalContributions
     L "API OK  total=$Total"
 } catch {
-    L ("API failed: " + $_.Exception.Message)
+    $em = $_.Exception.Message
+    L ("API failed: " + $em)
+    if ($em -match '\(401\)') { Show-Error 'GitHub token invalid or expired - open Settings' }
+    else                      { Show-Error ('GitHub API failed: ' + $em) }
     exit 1
 }
 
@@ -547,16 +628,7 @@ Move-Item -Path $tempIni -Destination $OutputIni -Force
 L ("Saved: " + $OutputIni + "  cells=" + $idx)
 
 # Trigger Rainmeter skin refresh automatically
-$config  = (Split-Path (Split-Path $SkinPath -Parent) -Leaf) + '\' + (Split-Path $SkinPath -Leaf)
-$iniFile = [System.IO.Path]::GetFileName($OutputIni)
-$rmExe   = "$env:ProgramFiles\Rainmeter\Rainmeter.exe"
-if (-not (Test-Path $rmExe)) { $rmExe = "${env:ProgramFiles(x86)}\Rainmeter\Rainmeter.exe" }
-if (Test-Path $rmExe) {
-    Start-Process $rmExe -ArgumentList "!Refresh `"$config`" `"$iniFile`""
-    L "Rainmeter refresh triggered: $config\$iniFile"
-} else {
-    L "WARNING: Rainmeter.exe not found - refresh manually"
-}
+Invoke-RainmeterRefresh
 
 L '=== DONE ==='
 Write-Output ("SUCCESS:" + $Total)

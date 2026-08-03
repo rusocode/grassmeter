@@ -32,6 +32,77 @@ try {
 $OutputIni = Join-Path $SkinPath 'CommitView.ini'
 
 # ------------------------------------------------------------------
+# Rainmeter refresh + visible error state
+# ------------------------------------------------------------------
+$cErr = '248,81,73,255'
+
+function Invoke-RainmeterRefresh {
+    $config  = (Split-Path (Split-Path $SkinPath -Parent) -Leaf) + '\' + (Split-Path $SkinPath -Leaf)
+    $iniFile = [System.IO.Path]::GetFileName($OutputIni)
+    $rmExe   = "$env:ProgramFiles\Rainmeter\Rainmeter.exe"
+    if (-not (Test-Path $rmExe)) { $rmExe = "${env:ProgramFiles(x86)}\Rainmeter\Rainmeter.exe" }
+    if (Test-Path $rmExe) {
+        Start-Process $rmExe -ArgumentList "!Refresh `"$config`" `"$iniFile`"" -ErrorAction SilentlyContinue
+        L "Rainmeter refresh triggered: $config\$iniFile"
+    } else {
+        L 'WARNING: Rainmeter.exe not found'
+    }
+}
+
+# Builds the [MErrBanner] meter shown when a fetch fails, so the widget never
+# leaves stale data on screen without saying why.
+function Get-ErrorBanner([string]$msg, [int]$width) {
+    # '#' delimits variables in Rainmeter, so strip it from API messages
+    $safeMsg = (($msg -replace '[\r\n#]+', ' ') -replace '\s+', ' ').Trim()
+    $stamp   = Get-Date -f 'HH:mm'
+    return @(
+        '[MErrBanner]'
+        'Meter=String'
+        'X=12'
+        'Y=0'
+        ('W=' + ($width - 24))
+        'H=14'
+        ("Text=! $safeMsg ($stamp)")
+        ("FontColor=$cErr")
+        'FontSize=8'
+        'FontFace=Segoe UI'
+        'AntiAlias=1'
+        'ClipString=2'
+        ("ToolTipText=Last refresh at ${stamp}: $safeMsg")
+        ''
+    )
+}
+
+# Overlays the banner on the last generated widget when there is no fresh data
+# to render at all.
+function Show-Error($msg) {
+    if (-not (Test-Path $OutputIni)) { L 'No CommitView.ini yet - cannot show error banner'; return }
+    try {
+        $txt = [System.IO.File]::ReadAllText($OutputIni, [System.Text.Encoding]::Unicode)
+    } catch {
+        L ('Cannot read CommitView.ini for error banner: ' + $_.Exception.Message); return
+    }
+
+    # Drop any previous banner so repeated failures do not stack up
+    $txt = [regex]::Replace($txt, '(?ms)^\[MErrBanner\].*?(?=^\[|\z)', '')
+
+    $w = 500
+    if ($txt -match '(?m)^Shape=Rectangle 0,0,(\d+),') { $w = [int]$Matches[1] }
+
+    $banner = (Get-ErrorBanner $msg $w) -join "`r`n"
+    $tmp = $OutputIni + '.tmp'
+    try {
+        [System.IO.File]::WriteAllText($tmp, ($txt.TrimEnd() + "`r`n`r`n" + $banner), [System.Text.Encoding]::Unicode)
+        Move-Item -Path $tmp -Destination $OutputIni -Force -ErrorAction Stop
+        L 'Error banner shown'
+        Invoke-RainmeterRefresh
+    } catch {
+        L ('Failed to write error banner: ' + $_.Exception.Message)
+        if (Test-Path $tmp) { Remove-Item $tmp -Force -ErrorAction SilentlyContinue }
+    }
+}
+
+# ------------------------------------------------------------------
 # Parse Settings.inc
 # ------------------------------------------------------------------
 $Token = ''; $Repo1 = ''; $Repo2 = ''; $Repo3 = ''; $AutoRefreshMin = 0; $Theme = 'Green'
@@ -78,7 +149,11 @@ $cAccent = switch ($Theme) {
 }
 L "Token=$(if($Token){'set'}else{'NOT SET'})  Repo1=$Repo1  Repo2=$Repo2  Repo3=$Repo3  AutoRefreshMin=$AutoRefreshMin  Theme=$Theme"
 
-if ($Token -eq '' -or $Token -match '^ghp_x+$' -or $Token -eq 'ghp_your_token_here') { L 'ERROR: GitHubToken not set'; exit 1 }
+if ($Token -eq '' -or $Token -match '^ghp_x+$' -or $Token -eq 'ghp_your_token_here') {
+    L 'ERROR: GitHubToken not set'
+    Show-Error 'GitHub token not set - open Settings'
+    exit 1
+}
 
 # ------------------------------------------------------------------
 # Helpers
@@ -106,6 +181,8 @@ $Rows = [System.Collections.Generic.List[hashtable]]::new()
 
 $configuredRepos = @($Repo1, $Repo2, $Repo3) | Where-Object { $_ -ne '' }
 $successCount    = 0
+$lastError       = ''
+$failedRepos     = [System.Collections.Generic.List[string]]::new()
 
 foreach ($repo in $configuredRepos) {
     L "Fetching: $repo"
@@ -127,7 +204,9 @@ foreach ($repo in $configuredRepos) {
         $successCount++
         L "  OK  $($commits.Count) commits"
     } catch {
-        L ('  FAIL: ' + $_.Exception.Message)
+        $lastError = $_.Exception.Message
+        $failedRepos.Add($repo)
+        L ('  FAIL: ' + $lastError)
     }
 }
 
@@ -137,6 +216,8 @@ L ("Total rows: $($Rows.Count)  success=$successCount/$($configuredRepos.Count)"
 # Partial failure → regenerate with successful repos so the widget stays accurate
 if ($successCount -eq 0 -and $configuredRepos.Count -gt 0) {
     L 'WARNING: all repos failed - keeping existing CommitView.ini unchanged'
+    if ($lastError -match '\(401\)') { Show-Error 'GitHub token invalid or expired - open Settings' }
+    else                             { Show-Error ('GitHub API failed: ' + $lastError) }
     L '=== DONE (no update) ==='
     exit 0
 }
@@ -330,6 +411,11 @@ W ('LeftMouseUpAction=["wscript.exe" "#CURRENTPATH#launcher_commits.vbs"]')
 W 'ToolTipText=Click to reload commits'
 W ''
 
+# Partial failure: show fresh data, but say which repos could not be loaded
+if ($failedRepos.Count -gt 0) {
+    foreach ($bl in (Get-ErrorBanner ('Could not load: ' + ($failedRepos -join ', ')) $WW)) { W $bl }
+}
+
 # ------------------------------------------------------------------
 # Save - write to temp then rename atomically to prevent partial reads
 # ------------------------------------------------------------------
@@ -349,18 +435,7 @@ try {
 # ------------------------------------------------------------------
 # Trigger Rainmeter skin refresh (only if save succeeded)
 # ------------------------------------------------------------------
-if ($savedOk) {
-    $config  = (Split-Path (Split-Path $SkinPath -Parent) -Leaf) + '\' + (Split-Path $SkinPath -Leaf)
-    $iniFile = 'CommitView.ini'
-    $rmExe   = "$env:ProgramFiles\Rainmeter\Rainmeter.exe"
-    if (-not (Test-Path $rmExe)) { $rmExe = "${env:ProgramFiles(x86)}\Rainmeter\Rainmeter.exe" }
-    if (Test-Path $rmExe) {
-        Start-Process $rmExe -ArgumentList "!Refresh `"$config`" `"$iniFile`"" -ErrorAction SilentlyContinue
-        L "Rainmeter refresh triggered: $config\$iniFile"
-    } else {
-        L 'WARNING: Rainmeter.exe not found'
-    }
-}
+if ($savedOk) { Invoke-RainmeterRefresh }
 
 L '=== DONE ==='
 } finally {
